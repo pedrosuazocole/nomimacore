@@ -1,6 +1,7 @@
 const EmpleadoModel = require('../models/empleadoModel');
 const TurnoModel = require('../models/turnoModel');
 const { DIAS_SEMANA } = require('../config/constants');
+const { generarPlantilla, procesarImportacion } = require('../services/turnoImportService');
 
 function lunesDeLaSemana(fecha) {
     const d = new Date(fecha + 'T00:00:00');
@@ -52,6 +53,38 @@ const TurnoController = {
     guardarDia(req, res) {
         const turno = TurnoModel.guardarDia(req.body);
         res.json({ ok: true, turno });
+    },
+
+    /**
+     * Genera y descarga el archivo .xlsx de plantilla para carga masiva de horarios.
+     */
+    descargarPlantilla(req, res) {
+        const buffer = generarPlantilla();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="plantilla-horarios-nominacore.xlsx"');
+        res.send(buffer);
+    },
+
+    importarForm(req, res) {
+        res.render('turnos/importar', { title: 'Importar Horarios', resultado: null, errorGeneral: null });
+    },
+
+    importar(req, res) {
+        if (!req.file) {
+            return res.status(400).render('turnos/importar', {
+                title: 'Importar Horarios',
+                resultado: null,
+                errorGeneral: 'Debes seleccionar un archivo .xlsx o .xls antes de continuar.'
+            });
+        }
+
+        const resultado = procesarImportacion(req.file.buffer);
+
+        res.render('turnos/importar', {
+            title: 'Importar Horarios',
+            resultado: resultado.ok ? resultado.resultados : null,
+            errorGeneral: resultado.ok ? null : resultado.errorGeneral
+        });
     }
 };
 
