@@ -1,5 +1,13 @@
-<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
     <h1 class="text-2xl font-bold text-[#1B2A4A]">Programacion de Horarios</h1>
+    <div class="flex flex-wrap gap-2">
+        <a href="/turnos/plantilla" class="btn btn-outline">⬇ Descargar Plantilla de Horarios</a>
+        <a href="/turnos/importar" class="btn btn-secondary">⬆ Importar Horarios</a>
+    </div>
+</div>
+
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+    <div></div>
     <div class="flex gap-2">
         <a href="/turnos?semana=<%= semanaAnterior %>" class="btn btn-outline">&larr; Semana anterior</a>
         <a href="/turnos?semana=<%= semanaSiguiente %>" class="btn btn-outline">Semana siguiente &rarr;</a>
