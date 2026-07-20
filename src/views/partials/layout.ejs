@@ -64,6 +64,15 @@
 document.getElementById('menuBtn')?.addEventListener('click', () => {
     document.getElementById('navLinks').classList.toggle('hidden');
 });
+// Cierra el menu movil automaticamente al tocar un enlace, para no
+// tener que cerrarlo manualmente despues de cada navegacion.
+document.querySelectorAll('#navLinks a').forEach(link => {
+    link.addEventListener('click', () => {
+        if (window.innerWidth < 768) {
+            document.getElementById('navLinks').classList.add('hidden');
+        }
+    });
+});
 </script>
 </body>
 </html>

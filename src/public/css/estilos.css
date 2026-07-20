@@ -42,7 +42,10 @@
     padding: .55rem .75rem;
     border-radius: .5rem;
     border: 1px solid #cbd5e1;
-    font-size: .9rem;
+    font-size: 16px; /* evita el zoom automatico de iOS Safari al enfocar */
+}
+@media (min-width: 768px) {
+    .input, select.input, textarea.input { font-size: .9rem; }
 }
 .input:focus { outline: 2px solid #0D9488; outline-offset: 1px; }
 
