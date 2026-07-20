@@ -1,8 +1,5 @@
-<div class="flex items-center justify-between mb-5 no-print">
-    <div>
-        <h1 class="text-2xl font-bold text-[#1B2A4A]">Resumen de Planillas por Periodo</h1>
-        <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
-    </div>
+<div class="mb-5 no-print">
+    <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
 </div>
 
 <form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 no-print">
@@ -49,37 +46,41 @@
     <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
 </div>
 
-<div class="text-center mb-4 hidden print:block">
-    <h1 class="text-xl font-bold text-[#1B2A4A]">Resumen de Planillas por Periodo</h1>
-    <p class="text-sm text-slate-600"><%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %></p>
-</div>
+<%- include('../partials/reporte_header', {
+    tituloReporte: 'Resumen de Planillas por Periodo',
+    subtitulo: `${filtros.fecha_inicio} al ${filtros.fecha_fin}`
+}) %>
 
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-    <div class="card text-center avoid-break">
-        <p class="text-xl font-bold text-[#1B2A4A]">L. <%= totales.total_salarios.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
-        <p class="text-xs text-slate-500">Salarios</p>
+    <div class="stat-card stat-card--navy avoid-break">
+        <span class="stat-card__icon">💰</span>
+        <div><p class="stat-card__value">L. <%= totales.total_salarios.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Salarios</p></div>
     </div>
-    <div class="card text-center avoid-break">
-        <p class="text-xl font-bold text-[#D97A2C]">L. <%= totales.total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
-        <p class="text-xs text-slate-500">Horas Extra</p>
+    <div class="stat-card stat-card--orange avoid-break">
+        <span class="stat-card__icon">⏱️</span>
+        <div><p class="stat-card__value">L. <%= totales.total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Horas Extra</p></div>
     </div>
-    <div class="card text-center avoid-break">
-        <p class="text-xl font-bold text-red-600">L. <%= totales.total_deducciones.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
-        <p class="text-xs text-slate-500">Deducciones</p>
+    <div class="stat-card stat-card--red avoid-break">
+        <span class="stat-card__icon">➖</span>
+        <div><p class="stat-card__value">L. <%= totales.total_deducciones.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Deducciones</p></div>
     </div>
-    <div class="card text-center avoid-break bg-teal-50 border border-teal-200">
-        <p class="text-xl font-bold text-[#0D9488]">L. <%= totales.total_pagar.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
-        <p class="text-xs text-slate-500">Total a Pagar</p>
+    <div class="stat-card stat-card--total avoid-break">
+        <span class="stat-card__icon">✅</span>
+        <div><p class="stat-card__value">L. <%= totales.total_pagar.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Total a Pagar</p></div>
     </div>
 </div>
 
+<% if (filas.length === 0) { %>
+    <div class="reporte-vacio avoid-break">
+        <div class="reporte-vacio__icon">📋</div>
+        <p class="font-medium text-slate-600">No hay planillas en el rango seleccionado.</p>
+        <p class="text-sm">Ajusta las fechas o procesa una planilla primero.</p>
+    </div>
+<% } else { %>
 <div class="card table-scroll">
     <table class="table-nomina">
         <thead><tr><th>Planilla</th><th>Tipo</th><th>Empresa</th><th>Periodo</th><th>Estado</th><th>Salarios</th><th>Extras</th><th>Deducciones</th><th>Total a Pagar</th></tr></thead>
         <tbody>
-        <% if (filas.length === 0) { %>
-            <tr><td colspan="9" class="text-center text-slate-500 py-6">No hay planillas en el rango seleccionado.</td></tr>
-        <% } %>
         <% filas.forEach(p => { %>
             <tr class="avoid-break">
                 <td class="font-medium"><%= p.nombre %></td>
@@ -94,7 +95,6 @@
             </tr>
         <% }) %>
         </tbody>
-        <% if (filas.length > 0) { %>
         <tfoot>
             <tr class="font-bold bg-slate-50">
                 <td colspan="5">TOTALES</td>
@@ -104,6 +104,8 @@
                 <td>L. <%= totales.total_pagar.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
             </tr>
         </tfoot>
-        <% } %>
     </table>
 </div>
+<% } %>
+
+<%- include('../partials/reporte_footer') %>

@@ -1,4 +1,5 @@
 const EmpleadoModel = require('../models/empleadoModel');
+const { generarPlantilla, procesarImportacion } = require('../services/empleadoImportService');
 
 const EmpleadoController = {
     index(req, res) {
@@ -54,6 +55,38 @@ const EmpleadoController = {
     eliminar(req, res) {
         EmpleadoModel.eliminar(req.params.id);
         res.redirect('/empleados?ok=Empleado dado de baja');
+    },
+
+    /**
+     * Genera y descarga el archivo .xlsx de plantilla para carga masiva.
+     */
+    descargarPlantilla(req, res) {
+        const buffer = generarPlantilla();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="plantilla-empleados-nominacore.xlsx"');
+        res.send(buffer);
+    },
+
+    importarForm(req, res) {
+        res.render('empleados/importar', { title: 'Importar Empleados', resultado: null, errorGeneral: null });
+    },
+
+    importar(req, res) {
+        if (!req.file) {
+            return res.status(400).render('empleados/importar', {
+                title: 'Importar Empleados',
+                resultado: null,
+                errorGeneral: 'Debes seleccionar un archivo .xlsx o .xls antes de continuar.'
+            });
+        }
+
+        const resultado = procesarImportacion(req.file.buffer);
+
+        res.render('empleados/importar', {
+            title: 'Importar Empleados',
+            resultado: resultado.ok ? resultado.resultados : null,
+            errorGeneral: resultado.ok ? null : resultado.errorGeneral
+        });
     }
 };
 

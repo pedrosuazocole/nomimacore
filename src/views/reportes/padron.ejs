@@ -1,8 +1,5 @@
-<div class="flex items-center justify-between mb-5 no-print">
-    <div>
-        <h1 class="text-2xl font-bold text-[#1B2A4A]">Padron de Empleados</h1>
-        <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
-    </div>
+<div class="mb-5 no-print">
+    <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
 </div>
 
 <form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 no-print">
@@ -47,20 +44,21 @@
     <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
 </div>
 
-<div class="text-center mb-4 hidden print:block">
-    <h1 class="text-xl font-bold text-[#1B2A4A]">Padron de Empleados</h1>
-    <p class="text-sm text-slate-600">Estado: <%= filtros.estado || 'Todos' %></p>
-</div>
+<%- include('../partials/reporte_header', {
+    tituloReporte: 'Padron de Empleados',
+    subtitulo: `Estado: ${filtros.estado || 'Todos'} · ${filas.length} empleado(s)`
+}) %>
 
-<p class="text-sm text-slate-600 mb-3 no-print"><%= filas.length %> empleado(s) encontrado(s)</p>
-
+<% if (filas.length === 0) { %>
+    <div class="reporte-vacio avoid-break">
+        <div class="reporte-vacio__icon">👥</div>
+        <p class="font-medium text-slate-600">No hay empleados que coincidan con el filtro.</p>
+    </div>
+<% } else { %>
 <div class="card table-scroll">
     <table class="table-nomina">
         <thead><tr><th>Nombre</th><th>Codigo</th><th>Departamento</th><th>Cargo</th><th>Empresa</th><th>Salario Base</th><th>Jornada</th><th>Ingreso</th><th>Estado</th></tr></thead>
         <tbody>
-        <% if (filas.length === 0) { %>
-            <tr><td colspan="9" class="text-center text-slate-500 py-6">No hay empleados que coincidan con el filtro.</td></tr>
-        <% } %>
         <% filas.forEach(e => { %>
             <tr class="avoid-break">
                 <td class="font-medium"><%= e.nombre_completo %></td>
@@ -77,3 +75,6 @@
         </tbody>
     </table>
 </div>
+<% } %>
+
+<%- include('../partials/reporte_footer') %>

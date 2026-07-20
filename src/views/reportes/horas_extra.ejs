@@ -1,8 +1,5 @@
-<div class="flex items-center justify-between mb-5 no-print">
-    <div>
-        <h1 class="text-2xl font-bold text-[#1B2A4A]">Reporte de Horas Extra</h1>
-        <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
-    </div>
+<div class="mb-5 no-print">
+    <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
 </div>
 
 <form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 no-print">
@@ -38,26 +35,44 @@
     <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
 </div>
 
-<div class="text-center mb-4 hidden print:block">
-    <h1 class="text-xl font-bold text-[#1B2A4A]">Reporte de Horas Extra</h1>
-    <p class="text-sm text-slate-600"><%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %></p>
-</div>
+<%- include('../partials/reporte_header', {
+    tituloReporte: 'Reporte de Horas Extra',
+    subtitulo: `${filtros.fecha_inicio} al ${filtros.fecha_fin}`
+}) %>
 
 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
-    <div class="card text-center avoid-break"><p class="text-lg font-bold text-[#1B2A4A]"><%= totales.horas_extras_total %> h</p><p class="text-xs text-slate-500">Total Horas</p></div>
-    <div class="card text-center avoid-break"><p class="text-lg font-bold text-amber-600"><%= totales.horas_bucket_25 %> h</p><p class="text-xs text-slate-500">25% (2pm-7pm)</p></div>
-    <div class="card text-center avoid-break"><p class="text-lg font-bold text-orange-600"><%= totales.horas_bucket_50 %> h</p><p class="text-xs text-slate-500">50% (7pm-9pm)</p></div>
-    <div class="card text-center avoid-break"><p class="text-lg font-bold text-purple-600"><%= totales.horas_bucket_75 %> h</p><p class="text-xs text-slate-500">75% (Nocturno)</p></div>
-    <div class="card text-center avoid-break bg-teal-50 border border-teal-200"><p class="text-lg font-bold text-[#0D9488]">L. <%= totales.pago_total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="text-xs text-slate-500">Pago Total</p></div>
+    <div class="stat-card stat-card--navy avoid-break">
+        <span class="stat-card__icon">⏱️</span>
+        <div><p class="stat-card__value"><%= totales.horas_extras_total %> h</p><p class="stat-card__label">Total Horas</p></div>
+    </div>
+    <div class="stat-card avoid-break" style="border-left-color:#f59e0b">
+        <span class="stat-card__icon">🌤️</span>
+        <div><p class="stat-card__value" style="color:#f59e0b"><%= totales.horas_bucket_25 %> h</p><p class="stat-card__label">25% (2pm-7pm)</p></div>
+    </div>
+    <div class="stat-card stat-card--orange avoid-break">
+        <span class="stat-card__icon">🌆</span>
+        <div><p class="stat-card__value"><%= totales.horas_bucket_50 %> h</p><p class="stat-card__label">50% (7pm-9pm)</p></div>
+    </div>
+    <div class="stat-card stat-card--purple avoid-break">
+        <span class="stat-card__icon">🌙</span>
+        <div><p class="stat-card__value"><%= totales.horas_bucket_75 %> h</p><p class="stat-card__label">75% (Nocturno)</p></div>
+    </div>
+    <div class="stat-card stat-card--total avoid-break">
+        <span class="stat-card__icon">💵</span>
+        <div><p class="stat-card__value">L. <%= totales.pago_total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Pago Total</p></div>
+    </div>
 </div>
 
+<% if (filas.length === 0) { %>
+    <div class="reporte-vacio avoid-break">
+        <div class="reporte-vacio__icon">⏱️</div>
+        <p class="font-medium text-slate-600">No hay horas extra registradas en el rango seleccionado.</p>
+    </div>
+<% } else { %>
 <div class="card table-scroll">
     <table class="table-nomina">
         <thead><tr><th>Empleado</th><th>Departamento</th><th>Periodo</th><th>H. Ordinarias</th><th>H. Extra Total</th><th>25%</th><th>50%</th><th>75%</th><th>100%</th><th>Pago Total</th></tr></thead>
         <tbody>
-        <% if (filas.length === 0) { %>
-            <tr><td colspan="10" class="text-center text-slate-500 py-6">No hay horas extra registradas en el rango seleccionado.</td></tr>
-        <% } %>
         <% filas.forEach(r => { %>
             <tr class="avoid-break">
                 <td class="font-medium"><%= r.nombre_completo %></td>
@@ -73,7 +88,6 @@
             </tr>
         <% }) %>
         </tbody>
-        <% if (filas.length > 0) { %>
         <tfoot>
             <tr class="font-bold bg-slate-50">
                 <td colspan="4">TOTALES</td>
@@ -85,6 +99,8 @@
                 <td>L. <%= totales.pago_total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
             </tr>
         </tfoot>
-        <% } %>
     </table>
 </div>
+<% } %>
+
+<%- include('../partials/reporte_footer') %>
