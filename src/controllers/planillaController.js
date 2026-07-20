@@ -161,13 +161,13 @@ const PlanillaController = {
         const detalle = PlanillaModel.detalle(planilla.id);
         const cfg = getConfig();
 
-        res.locals.layout = false; // el reporte tiene su propio HTML/layout de impresion
         res.render('planillas/reporte', {
             title: `Reporte - ${planilla.nombre}`,
             planilla,
             detalle,
             cfg,
-            formato: req.query.formato || 'carta' // carta | ticket
+            formato: req.query.formato || 'carta', // carta | ticket
+            layout: false
         });
     },
 

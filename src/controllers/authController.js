@@ -5,14 +5,12 @@ const { checkLoginAttempts, registerFailedLogin, resetLoginAttempts } = require(
 const AuthController = {
     mostrarLogin(req, res) {
         if (req.session && req.session.userId) return res.redirect('/planillas');
-        res.locals.layout = false;
-        res.render('auth/login', { title: 'Iniciar Sesion', error: null, next: req.query.next || '/planillas' });
+        res.render('auth/login', { title: 'Iniciar Sesion', error: null, next: req.query.next || '/planillas', layout: false });
     },
 
     async procesarLogin(req, res) {
         const { username, password, next: siguiente } = req.body;
-        res.locals.layout = false;
-        const render = (error) => res.status(400).render('auth/login', { title: 'Iniciar Sesion', error, next: siguiente || '/planillas' });
+        const render = (error) => res.status(400).render('auth/login', { title: 'Iniciar Sesion', error, next: siguiente || '/planillas', layout: false });
 
         if (!username || !password) {
             return render('Por favor ingresa tu usuario y contraseña.');

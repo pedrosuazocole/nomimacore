@@ -16,6 +16,13 @@ const db = require('./config/db');
 
 const app = express();
 
+// Railway (y la mayoria de plataformas cloud) sirven la app detras de
+// un proxy que termina el HTTPS y reenvia la peticion por HTTP interno.
+// Sin esto, Express no reconoce la conexion como segura aunque el
+// usuario si este en HTTPS, lo que rompe las cookies de sesion
+// "secure" y puede causar loops de login (te regresa siempre a /login).
+app.set('trust proxy', 1);
+
 // ---- Vistas ----
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -38,9 +45,11 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'nominacore_dev_secret_cambia_esto',
     resave: false,
     saveUninitialized: false,
+    proxy: true, // confia en el header X-Forwarded-Proto que envia Railway
     cookie: {
         maxAge: 8 * 60 * 60 * 1000, // 8 horas
-        secure: process.env.NODE_ENV === 'production' && process.env.APP_URL?.startsWith('https'),
+        secure: 'auto',    // detecta HTTPS automaticamente via el proxy (gracias a trust proxy)
+        sameSite: 'lax',
         httpOnly: true
     }
 }));
