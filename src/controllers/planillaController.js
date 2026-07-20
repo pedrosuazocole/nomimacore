@@ -6,6 +6,7 @@ const {
     calcularHorasExtraSemana,
     calcularDetalleEmpleado,
     horasOrdinariasPorJornada,
+    calcularIhssRap,
     getConfig
 } = require('../services/calculoService');
 
@@ -58,13 +59,22 @@ const PlanillaController = {
 
             const detalleExistente = PlanillaModel.detalleEmpleado(planilla.id, emp.id);
 
+            // Sugerencia inicial de IHSS/RAP (editable): si la planilla ya
+            // se proceso antes se respeta lo que el usuario ya digito; si
+            // es la primera vez, se sugiere un estimado por porcentaje
+            // configurado en Configuracion, PERO el usuario debe verificar
+            // y corregir contra la tabla oficial vigente del IHSS/RAP.
+            const sugerido = calcularIhssRap(emp.salario_base, cfg);
+
             return {
                 empleado: emp,
                 horasTotales,
                 diasTrabajados,
                 horasOrdinarias,
                 horasExtra,
-                detalleExistente
+                detalleExistente,
+                ihssSugerido: detalleExistente ? detalleExistente.ihss : sugerido.ihss,
+                rapSugerido: detalleExistente ? detalleExistente.rap : sugerido.rap
             };
         });
 
@@ -110,6 +120,8 @@ const PlanillaController = {
                     diasTrabajados: fila.dias_trabajados,
                     septimoDiaProcede: fila.septimo_dia_procede,
                     horasExtrasPago: extras.pagoTotalExtras,
+                    ihss: fila.ihss,
+                    rap: fila.rap,
                     prestamos: fila.prestamos,
                     vales: fila.vales,
                     impuestoVecinal: fila.impuesto_vecinal,
@@ -210,6 +222,8 @@ function normalizarFilas(body) {
         bucket_50: campo(body.bucket_50, id),
         bucket_75: campo(body.bucket_75, id),
         bucket_100: campo(body.bucket_100, id),
+        ihss: campo(body.ihss, id),
+        rap: campo(body.rap, id),
         prestamos: campo(body.prestamos, id),
         vales: campo(body.vales, id),
         impuesto_vecinal: campo(body.impuesto_vecinal, id),
