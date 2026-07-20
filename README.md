@@ -95,6 +95,11 @@ primer login (o define `ADMIN_USERNAME`/`ADMIN_PASSWORD` propios en tu
 
 - **Empleados** (`/empleados`): CRUD completo — nombre, departamento,
   cuenta contable, salario base, tipo de jornada (diurna/nocturna/mixta).
+  Incluye **Importar Empleados** (carga masiva desde Excel, con
+  actualizacion automatica si el Codigo Contable ya existe) y
+  **Descargar Plantilla** (genera el .xlsx de referencia con instrucciones).
+- **Reportes** (`/reportes`): 6 reportes filtrables, todos con boton de
+  impresion y exportacion a Excel — ver seccion 6.
 - **Horarios** (`/turnos`): matriz semanal editable por empleado y dia,
   con calculo automatico de horas trabajadas (soporta turnos que cruzan
   medianoche).
@@ -103,7 +108,36 @@ primer login (o define `ADMIN_USERNAME`/`ADMIN_PASSWORD` propios en tu
 - **Configuracion** (`/configuracion`): jornadas legales, recargos por
   hora extra, porcentajes y techos de IHSS/RAP, datos de la empresa.
 
-## 6. Motor de Calculo (resumen)
+## 6. Modulo de Reportes
+
+Todos los reportes viven bajo `/reportes`, requieren sesion activa, y
+comparten el mismo patron: filtros por fecha (y otros criterios segun
+el reporte), boton **Imprimir** (usa el dialogo nativo del navegador) y
+boton **Exportar a Excel** (genera el .xlsx en el servidor con los
+mismos datos filtrados, encabezados y fila de totales).
+
+1. **Resumen de Planillas** (`/reportes/planillas`) — historico de
+   planillas procesadas, filtrable por rango de fechas, tipo de periodo,
+   empresa y estado.
+2. **Reporte Contable** (`/reportes/contable`) — asiento de nomina
+   (Debe/Haber) listo para contabilizar: salario ordinario + horas
+   extra vs. IHSS, RAP, prestamos, vales, impuesto vecinal e ISR, con
+   detalle por empleado y su cuenta contable.
+3. **Horas Extra** (`/reportes/horas-extra`) — desglose de horas extra
+   por empleado y franja horaria (25%, 50%, 75%, 100%), filtrable por
+   fecha, empleado y departamento. Se alimenta de la tabla
+   `horas_extras_semanal`, que se llena automaticamente cada vez que se
+   procesa una planilla.
+4. **Deducciones** (`/reportes/deducciones`) — IHSS, RAP, prestamos,
+   vales, impuesto vecinal e ISR por empleado y periodo; se puede
+   filtrar por un tipo de deduccion especifico.
+5. **Historial de Empleado** (`/reportes/empleado`) — resumen acumulado
+   de un empleado especifico en un rango de fechas (util como base
+   para una constancia de ingresos).
+6. **Padron de Empleados** (`/reportes/padron`) — listado completo
+   filtrable por estado, departamento, empresa y jornada.
+
+## 7. Motor de Calculo (resumen)
 
 Implementado en `src/services/calculoService.js`, replica formula por
 formula la logica de la hoja de calculo de referencia del cliente:
@@ -136,7 +170,7 @@ fijos en el codigo, porque cambian por resolucion oficial periodicamente.
 Verifica siempre la tabla vigente del IHSS y del RAP antes de procesar
 planilla real.
 
-## 7. Impresion de Reportes
+## 8. Impresion de Reportes
 
 El reporte de planilla (`/planillas/:id/reporte`) incluye:
 - Selector de formato: **Carta** (tabla resumen + baucher individual con
@@ -149,7 +183,7 @@ El reporte de planilla (`/planillas/:id/reporte`) incluye:
 - La preferencia "vista previa siempre" vs "impresion directa" se guarda
   en `/configuracion`.
 
-## 8. Notas de Mantenimiento
+## 9. Notas de Mantenimiento
 
 - Los datos de empleados NUNCA se borran fisicamente (baja logica con
   `estado = 'INACTIVO'`) para preservar el historial de planillas.

@@ -1,0 +1,98 @@
+<div class="flex items-center justify-between mb-5 no-print">
+    <div>
+        <h1 class="text-2xl font-bold text-[#1B2A4A]">Reporte Contable de Nomina</h1>
+        <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
+    </div>
+</div>
+
+<form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-4 gap-3 no-print">
+    <div>
+        <label class="block text-xs font-medium mb-1">Desde</label>
+        <input class="input" type="date" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Hasta</label>
+        <input class="input" type="date" name="fecha_fin" value="<%= filtros.fecha_fin %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Empresa</label>
+        <select class="input" name="empresa">
+            <option value="">Todas</option>
+            <% empresas.forEach(e => { %><option value="<%= e %>" <%= filtros.empresa === e ? 'selected' : '' %>><%= e %></option><% }) %>
+        </select>
+    </div>
+    <div class="flex items-end">
+        <button class="btn btn-secondary w-full">Filtrar</button>
+    </div>
+</form>
+
+<div class="flex flex-wrap gap-2 mb-5 no-print">
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir</button>
+    <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
+</div>
+
+<div class="text-center mb-4 hidden print:block">
+    <h1 class="text-xl font-bold text-[#1B2A4A]">Reporte Contable de Nomina</h1>
+    <p class="text-sm text-slate-600"><%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %><%= filtros.empresa ? ' — ' + filtros.empresa : '' %></p>
+</div>
+
+<% if (planillasIncluidas.length === 0) { %>
+    <div class="card text-center text-slate-500 py-10">No hay planillas procesadas en este rango. Ajusta las fechas o procesa una planilla primero.</div>
+<% } else { %>
+
+<div class="card mb-5 text-xs text-slate-600 avoid-break">
+    <strong>Planillas incluidas en este reporte:</strong>
+    <%= planillasIncluidas.map(p => `${p.nombre} (${p.fecha_inicio} al ${p.fecha_fin})`).join(' · ') %>
+</div>
+
+<!-- Resumen tipo asiento contable: Debe / Haber -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="card avoid-break">
+        <h2 class="font-bold text-[#1B2A4A] border-b pb-2 mb-3">DEBE (Gasto de Nomina)</h2>
+        <table class="w-full text-sm">
+            <tr class="border-b"><td class="py-1.5">Salario Ordinario + Septimo Dia</td><td class="text-right font-medium">L. <%= cuentas.salarioOrdinario.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">Salario Extraordinario (Horas Extra)</td><td class="text-right font-medium">L. <%= cuentas.salarioExtraordinario.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="font-bold"><td class="py-2">TOTAL GASTO DE NOMINA</td><td class="text-right text-[#1B2A4A]">L. <%= cuentas.totalGasto.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+        </table>
+    </div>
+
+    <div class="card avoid-break">
+        <h2 class="font-bold text-[#1B2A4A] border-b pb-2 mb-3">HABER (Retenciones y Pago)</h2>
+        <table class="w-full text-sm">
+            <tr class="border-b"><td class="py-1.5">IHSS por Pagar</td><td class="text-right">L. <%= cuentas.ihss.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">RAP por Pagar</td><td class="text-right">L. <%= cuentas.rap.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">Impuesto Vecinal por Pagar</td><td class="text-right">L. <%= cuentas.impuestoVecinal.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">ISR por Pagar</td><td class="text-right">L. <%= cuentas.isr.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">Prestamos Recuperados</td><td class="text-right">L. <%= cuentas.prestamos.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">Vales Recuperados</td><td class="text-right">L. <%= cuentas.vales.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b font-semibold"><td class="py-1.5">Subtotal Retenciones</td><td class="text-right">L. <%= cuentas.totalRetenciones.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="font-bold"><td class="py-2">EFECTIVO / BANCO (Total Pagado)</td><td class="text-right text-[#0D9488]">L. <%= cuentas.totalPagado.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+        </table>
+    </div>
+</div>
+
+<h2 class="font-bold text-[#1B2A4A] mb-3">Detalle por Empleado</h2>
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead><tr><th>Empleado</th><th>Cuenta</th><th>Planilla</th><th>Sal. Ordinario</th><th>H. Extra</th><th>IHSS</th><th>RAP</th><th>Prestamos</th><th>Vales</th><th>Imp.Vecinal</th><th>Total Pagado</th></tr></thead>
+        <tbody>
+        <% detalle.forEach(d => { %>
+            <tr class="avoid-break">
+                <td class="font-medium"><%= d.nombre_completo %></td>
+                <td><%= d.cuenta_contable || d.codigo_contable || '—' %></td>
+                <td><%= d.planilla_nombre %></td>
+                <td>L. <%= (d.salario_ordinario + d.septimo_dia_pago).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.horas_extras_pago).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.ihss).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.rap).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.prestamos).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.vales).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.impuesto_vecinal).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td class="font-bold">L. <%= Number(d.total_pagar).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</div>
+
+<% } %>

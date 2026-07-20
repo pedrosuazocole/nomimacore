@@ -1,0 +1,79 @@
+<div class="flex items-center justify-between mb-5 no-print">
+    <div>
+        <h1 class="text-2xl font-bold text-[#1B2A4A]">Padron de Empleados</h1>
+        <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
+    </div>
+</div>
+
+<form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 no-print">
+    <div>
+        <label class="block text-xs font-medium mb-1">Estado</label>
+        <select class="input" name="estado">
+            <option value="">Todos</option>
+            <option value="ACTIVO" <%= filtros.estado === 'ACTIVO' ? 'selected' : '' %>>Activo</option>
+            <option value="INACTIVO" <%= filtros.estado === 'INACTIVO' ? 'selected' : '' %>>Inactivo</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Departamento</label>
+        <select class="input" name="departamento">
+            <option value="">Todos</option>
+            <% departamentos.forEach(d => { %><option value="<%= d %>" <%= filtros.departamento === d ? 'selected' : '' %>><%= d %></option><% }) %>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Empresa</label>
+        <select class="input" name="empresa">
+            <option value="">Todas</option>
+            <% empresas.forEach(e => { %><option value="<%= e %>" <%= filtros.empresa === e ? 'selected' : '' %>><%= e %></option><% }) %>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Jornada</label>
+        <select class="input" name="tipo_jornada">
+            <option value="">Todas</option>
+            <option value="DIURNA" <%= filtros.tipo_jornada === 'DIURNA' ? 'selected' : '' %>>Diurna</option>
+            <option value="NOCTURNA" <%= filtros.tipo_jornada === 'NOCTURNA' ? 'selected' : '' %>>Nocturna</option>
+            <option value="MIXTA" <%= filtros.tipo_jornada === 'MIXTA' ? 'selected' : '' %>>Mixta</option>
+        </select>
+    </div>
+    <div class="flex items-end">
+        <button class="btn btn-secondary w-full">Filtrar</button>
+    </div>
+</form>
+
+<div class="flex flex-wrap gap-2 mb-5 no-print">
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir</button>
+    <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
+</div>
+
+<div class="text-center mb-4 hidden print:block">
+    <h1 class="text-xl font-bold text-[#1B2A4A]">Padron de Empleados</h1>
+    <p class="text-sm text-slate-600">Estado: <%= filtros.estado || 'Todos' %></p>
+</div>
+
+<p class="text-sm text-slate-600 mb-3 no-print"><%= filas.length %> empleado(s) encontrado(s)</p>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead><tr><th>Nombre</th><th>Codigo</th><th>Departamento</th><th>Cargo</th><th>Empresa</th><th>Salario Base</th><th>Jornada</th><th>Ingreso</th><th>Estado</th></tr></thead>
+        <tbody>
+        <% if (filas.length === 0) { %>
+            <tr><td colspan="9" class="text-center text-slate-500 py-6">No hay empleados que coincidan con el filtro.</td></tr>
+        <% } %>
+        <% filas.forEach(e => { %>
+            <tr class="avoid-break">
+                <td class="font-medium"><%= e.nombre_completo %></td>
+                <td><%= e.codigo_contable || '—' %></td>
+                <td><%= e.departamento %></td>
+                <td><%= e.cargo || '—' %></td>
+                <td><%= e.empresa || '—' %></td>
+                <td>L. <%= Number(e.salario_base).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td><%= e.tipo_jornada %></td>
+                <td><%= e.fecha_ingreso || '—' %></td>
+                <td><span class="text-xs px-2 py-1 rounded-full <%= e.estado === 'ACTIVO' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' %>"><%= e.estado %></span></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</div>

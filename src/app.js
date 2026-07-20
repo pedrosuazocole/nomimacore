@@ -11,6 +11,7 @@ const empleadosRouter = require('./routes/empleados');
 const turnosRouter = require('./routes/turnos');
 const planillasRouter = require('./routes/planillas');
 const configuracionRouter = require('./routes/configuracion');
+const reportesRouter = require('./routes/reportes');
 const { requireAuth } = require('./middlewares/auth');
 const db = require('./config/db');
 
@@ -72,6 +73,7 @@ app.use('/', authRouter);
 app.get('/', requireAuth, (req, res) => res.redirect('/planillas'));
 app.use('/usuarios', requireAuth, usuariosRouter);
 app.use('/empleados', requireAuth, empleadosRouter);
+app.use('/reportes', requireAuth, reportesRouter);
 app.use('/turnos', requireAuth, turnosRouter);
 app.use('/planillas', requireAuth, planillasRouter);
 app.use('/configuracion', requireAuth, configuracionRouter);

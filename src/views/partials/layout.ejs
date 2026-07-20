@@ -21,6 +21,7 @@
             <a href="/planillas" class="nav-link <%= currentPath && currentPath.startsWith('/planillas') ? 'nav-active' : '' %>">Planillas</a>
             <a href="/turnos" class="nav-link <%= currentPath && currentPath.startsWith('/turnos') ? 'nav-active' : '' %>">Horarios</a>
             <a href="/empleados" class="nav-link <%= currentPath && currentPath.startsWith('/empleados') ? 'nav-active' : '' %>">Empleados</a>
+            <a href="/reportes" class="nav-link <%= currentPath && currentPath.startsWith('/reportes') ? 'nav-active' : '' %>">Reportes</a>
             <% if (usuarioActual && usuarioActual.rol === 'ADMIN') { %>
                 <a href="/usuarios" class="nav-link <%= currentPath && currentPath.startsWith('/usuarios') ? 'nav-active' : '' %>">Usuarios</a>
             <% } %>

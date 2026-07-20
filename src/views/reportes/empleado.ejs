@@ -1,0 +1,93 @@
+<div class="flex items-center justify-between mb-5 no-print">
+    <div>
+        <h1 class="text-2xl font-bold text-[#1B2A4A]">Historial de Empleado</h1>
+        <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
+    </div>
+</div>
+
+<form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-4 gap-3 no-print">
+    <div class="sm:col-span-2">
+        <label class="block text-xs font-medium mb-1">Empleado *</label>
+        <select class="input" name="empleado_id" required>
+            <option value="">Selecciona un empleado...</option>
+            <% empleados.forEach(e => { %><option value="<%= e.id %>" <%= String(filtros.empleado_id) === String(e.id) ? 'selected' : '' %>><%= e.nombre_completo %></option><% }) %>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Desde</label>
+        <input class="input" type="date" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Hasta</label>
+        <input class="input" type="date" name="fecha_fin" value="<%= filtros.fecha_fin %>">
+    </div>
+    <div class="sm:col-span-4">
+        <button class="btn btn-secondary">Consultar</button>
+    </div>
+</form>
+
+<% if (!empleadoSel) { %>
+    <div class="card text-center text-slate-500 py-10">Selecciona un empleado y un rango de fechas para ver su historial.</div>
+<% } else { %>
+
+<div class="flex flex-wrap gap-2 mb-5 no-print">
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir</button>
+    <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
+</div>
+
+<div class="card mb-5 avoid-break">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+            <h2 class="text-lg font-bold text-[#1B2A4A]"><%= empleadoSel.nombre_completo %></h2>
+            <p class="text-sm text-slate-500"><%= empleadoSel.departamento %> · <%= empleadoSel.cargo || 'Sin cargo asignado' %> · Codigo: <%= empleadoSel.codigo_contable || '—' %></p>
+        </div>
+        <p class="text-sm text-slate-600"><%= filtros.fecha_inicio %> al <%= filtros.fecha_fin %></p>
+    </div>
+</div>
+
+<% if (filas.length === 0) { %>
+    <div class="card text-center text-slate-500 py-10">Este empleado no tiene planillas procesadas en el rango seleccionado.</div>
+<% } else { %>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="card text-center avoid-break"><p class="text-lg font-bold text-[#1B2A4A]">L. <%= totales.salario_ordinario.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="text-xs text-slate-500">Salario Ordinario</p></div>
+    <div class="card text-center avoid-break"><p class="text-lg font-bold text-[#D97A2C]">L. <%= totales.horas_extras_pago.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="text-xs text-slate-500">Horas Extra</p></div>
+    <div class="card text-center avoid-break"><p class="text-lg font-bold text-red-600">L. <%= totales.total_deducciones.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="text-xs text-slate-500">Deducciones</p></div>
+    <div class="card text-center avoid-break bg-teal-50 border border-teal-200"><p class="text-lg font-bold text-[#0D9488]">L. <%= totales.total_pagar.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="text-xs text-slate-500">Total Pagado</p></div>
+</div>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead><tr><th>Planilla</th><th>Tipo</th><th>Fechas</th><th>Sal. Ordinario</th><th>7mo Dia</th><th>H. Extra</th><th>IHSS</th><th>RAP</th><th>Deducciones</th><th>Total Pagado</th></tr></thead>
+        <tbody>
+        <% filas.forEach(r => { %>
+            <tr class="avoid-break">
+                <td class="font-medium"><%= r.planilla_nombre %></td>
+                <td><%= r.tipo_periodo %></td>
+                <td class="whitespace-nowrap"><%= r.fecha_inicio %> al <%= r.fecha_fin %></td>
+                <td>L. <%= Number(r.salario_ordinario).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.septimo_dia_pago).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.horas_extras_pago).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.ihss).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.rap).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.total_deducciones).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td class="font-bold">L. <%= Number(r.total_pagar).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+        <tfoot>
+            <tr class="font-bold bg-slate-50">
+                <td colspan="3">TOTALES</td>
+                <td>L. <%= totales.salario_ordinario.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.septimo_dia_pago.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.horas_extras_pago.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.ihss.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.rap.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.total_deducciones.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.total_pagar.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<% } %>
+<% } %>
