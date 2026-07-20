@@ -5,7 +5,7 @@
 const etiquetaSalarioPeriodo = planilla.tipo_periodo === 'QUINCENAL' ? 'Salario Quincenal'
     : planilla.tipo_periodo === 'SEMANAL' ? 'Salario Semanal'
     : null;
-const totalColumnas = 17 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colspans dinamicos
+const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colspans dinamicos (+1 por la nueva columna Horas Extras)
 %>
 <div class="mb-5">
     <h1 class="text-2xl font-bold text-[#1B2A4A]"><%= planilla.nombre %></h1>
@@ -15,7 +15,7 @@ const totalColumnas = 17 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
 <div class="card mb-4 text-sm bg-teal-50 border border-teal-200">
     Las <strong>horas totales</strong> y <strong>dias trabajados</strong> se precargaron desde el modulo de Horarios.
     <strong>IHSS y RAP</strong> vienen con un valor sugerido (estimado por porcentaje) — verificalos y corrigelos contra la tabla oficial vigente del IHSS/RAP antes de guardar.
-    El <strong>Salario Diario</strong><% if (etiquetaSalarioPeriodo) { %> y el <strong><%= etiquetaSalarioPeriodo %></strong><% } %>, junto con <strong>Total Deducciones</strong> y <strong>Total a Pagar</strong>, se calculan automaticamente mientras escribes.
+    El <strong>Salario Diario</strong><% if (etiquetaSalarioPeriodo) { %> y el <strong><%= etiquetaSalarioPeriodo %></strong><% } %>, junto con <strong>Horas Extras</strong>, <strong>Total Deducciones</strong> y <strong>Total a Pagar</strong>, se calculan automaticamente mientras escribes.
 </div>
 
 <form method="POST" action="/planillas/<%= planilla.id %>/procesar">
@@ -41,6 +41,7 @@ const totalColumnas = 17 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
                 <th>HE 50%<br><span class="font-normal">7pm-9pm</span></th>
                 <th>HE 75%<br><span class="font-normal">6pm-6am</span></th>
                 <th>HE 100%<br><span class="font-normal">Feriado</span></th>
+                <th>Horas Extras<br><span class="font-normal">Total en L.</span></th>
                 <th>IHSS</th>
                 <th>RAP</th>
                 <th>Prestamos</th>
@@ -76,6 +77,7 @@ const totalColumnas = 17 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
                 <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_50[emp_<%= id %>]" value="0"></td>
                 <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_75[emp_<%= id %>]" value="0"></td>
                 <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_100[emp_<%= id %>]" value="0"></td>
+                <td class="font-semibold text-[#D97A2C] whitespace-nowrap salida-horas-extras">L. 0.00</td>
                 <td><input class="input campo-calculo campo-ihss w-24" type="number" step="0.01" name="ihss[emp_<%= id %>]" value="<%= f.ihssSugerido.toFixed(2) %>"></td>
                 <td><input class="input campo-calculo campo-rap w-24" type="number" step="0.01" name="rap[emp_<%= id %>]" value="<%= f.rapSugerido.toFixed(2) %>"></td>
                 <td><input class="input campo-calculo w-24" type="number" step="0.01" name="prestamos[emp_<%= id %>]" value="<%= d ? d.prestamos : 0 %>"></td>
@@ -171,6 +173,7 @@ const totalColumnas = 17 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
         const celdaSalarioPeriodo = tr.querySelector('.salida-salario-periodo');
         if (celdaSalarioPeriodo) celdaSalarioPeriodo.textContent = formatoL(salarioPeriodo);
 
+        tr.querySelector('.salida-horas-extras').textContent = formatoL(pagoExtras);
         tr.querySelector('.salida-total-deducciones').textContent = formatoL(totalDeducciones);
         tr.querySelector('.salida-total-pagar').textContent = formatoL(totalPagar);
 
