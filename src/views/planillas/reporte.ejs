@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es-HN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte - <%= planilla.nombre %></title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/estilos.css">
+<style>
+    body { background:#e2e8f0; }
+    .hoja { background:#fff; max-width: 850px; margin: 0 auto; padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+    .hoja-ticket { max-width: 320px; font-size: 11px; padding: 12px; }
+    .firma-linea { border-top: 1px solid #334155; margin-top: 40px; padding-top: 4px; text-align:center; font-size: 11px; }
+    @media print {
+        body { background: #fff; }
+        .hoja { box-shadow:none; max-width:100%; padding:0; }
+    }
+</style>
+</head>
+<body class="py-6 px-3">
+
+<!-- ============ BARRA DE HERRAMIENTAS (no imprime) ============ -->
+<div class="no-print max-w-4xl mx-auto mb-4 card flex flex-wrap items-center gap-3 justify-between">
+    <div class="flex items-center gap-2">
+        <a href="/planillas/<%= planilla.id %>/procesar" class="btn btn-outline">&larr; Volver</a>
+        <select class="input" onchange="location.href='/planillas/<%= planilla.id %>/reporte?formato='+this.value">
+            <option value="carta" <%= formato === 'carta' ? 'selected' : '' %>>Formato Carta</option>
+            <option value="ticket" <%= formato === 'ticket' ? 'selected' : '' %>>Formato Ticket (voucher)</option>
+        </select>
+    </div>
+    <div class="flex items-center gap-2">
+        <label class="text-sm">Copias:</label>
+        <input id="numCopias" type="number" min="1" value="1" class="input w-16">
+        <button onclick="mostrarPreview()" class="btn btn-secondary">Vista Previa</button>
+        <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+        <a href="mailto:?subject=<%= encodeURIComponent(planilla.nombre) %>&body=<%= encodeURIComponent('Adjunto planilla: ' + planilla.nombre) %>" class="btn btn-outline">Enviar Email</a>
+        <button onclick="descargarPDF()" class="btn btn-accent">Descargar PDF</button>
+    </div>
+</div>
+
+<!-- ============ MODAL VISTA PREVIA ============ -->
+<div id="modalPreview" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4 no-print">
+    <div class="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto">
+        <div class="p-3 border-b flex justify-between items-center sticky top-0 bg-white">
+            <h3 class="font-bold text-[#1B2A4A]">Vista Previa de Impresion (<span id="pFormato"><%= formato %></span>)</h3>
+            <button onclick="cerrarPreview()" class="text-slate-500 text-xl leading-none">&times;</button>
+        </div>
+        <div class="p-4 text-sm text-slate-600">
+            Este es el contenido exacto que se enviara a la impresora. Copias configuradas: <strong id="pCopias">1</strong>.
+        </div>
+        <div class="p-4">
+            <iframe src="#hoja-imprimible" id="previewFrame" class="w-full border rounded" style="height:60vh;"></iframe>
+        </div>
+        <div class="p-3 border-t flex justify-end gap-2 sticky bottom-0 bg-white">
+            <button onclick="cerrarPreview()" class="btn btn-outline">Cancelar</button>
+            <button onclick="window.print()" class="btn btn-primary">Imprimir Ahora</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ CONTENIDO IMPRIMIBLE ============ -->
+<div id="hoja-imprimible" class="hoja <%= formato === 'ticket' ? 'hoja-ticket print-ticket' : 'print-carta' %>">
+
+    <div class="text-center mb-4">
+        <h1 class="font-bold <%= formato === 'ticket' ? 'text-sm' : 'text-xl' %> text-[#1B2A4A]"><%= cfg.empresa_nombre %></h1>
+        <% if (cfg.empresa_rtn) { %><p class="text-xs text-slate-500">RTN: <%= cfg.empresa_rtn %></p><% } %>
+        <h2 class="font-semibold mt-1 <%= formato === 'ticket' ? 'text-xs' : 'text-base' %>">PLANILLA <%= planilla.tipo_periodo %></h2>
+        <p class="text-xs text-slate-600"><%= planilla.nombre %> · <%= planilla.fecha_inicio %> al <%= planilla.fecha_fin %></p>
+        <% if (planilla.empresa) { %><p class="text-xs text-slate-500"><%= planilla.empresa %></p><% } %>
+    </div>
+
+    <% if (formato === 'carta') { %>
+        <!-- ===== FORMATO CARTA: tabla resumen + detalle firmable ===== -->
+        <div class="table-scroll mb-6">
+            <table class="table-nomina text-xs">
+                <thead>
+                    <tr>
+                        <th>Colaborador</th><th>Cta. Contable</th><th>Sal. Mensual</th><th>Sal. Diario</th>
+                        <th>Dias</th><th>7mo Dia</th><th>Sal. Total</th><th>Horas Extra (L.)</th>
+                        <th>Sal+HE</th><th>IHSS</th><th>RAP</th><th>Otras Ded.</th><th>Total Deduc.</th><th>Total a Pagar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                <% let sTot={mensual:0,diario:0,dias:0,septimo:0,total:0,he:0,salhe:0,ihss:0,rap:0,ded:0,pagar:0}; %>
+                <% detalle.forEach(d => {
+                    sTot.mensual+=d.salario_mensual; sTot.total+=d.salario_total; sTot.he+=d.horas_extras_pago;
+                    sTot.salhe+=d.sal_mas_he; sTot.ihss+=d.ihss; sTot.rap+=d.rap; sTot.ded+=d.total_deducciones; sTot.pagar+=d.total_pagar;
+                %>
+                    <tr class="avoid-break">
+                        <td><%= d.nombre_completo %></td>
+                        <td><%= d.cuenta_contable || d.codigo_contable || '—' %></td>
+                        <td>L. <%= d.salario_mensual.toFixed(2) %></td>
+                        <td>L. <%= d.salario_diario.toFixed(2) %></td>
+                        <td><%= d.dias_trabajados %></td>
+                        <td><%= d.septimo_dia_procede ? 'Si' : 'No' %></td>
+                        <td>L. <%= d.salario_total.toFixed(2) %></td>
+                        <td>L. <%= d.horas_extras_pago.toFixed(2) %></td>
+                        <td>L. <%= d.sal_mas_he.toFixed(2) %></td>
+                        <td>L. <%= d.ihss.toFixed(2) %></td>
+                        <td>L. <%= d.rap.toFixed(2) %></td>
+                        <td>L. <%= (d.prestamos + d.vales + d.impuesto_vecinal + d.isr).toFixed(2) %></td>
+                        <td>L. <%= d.total_deducciones.toFixed(2) %></td>
+                        <td class="font-bold">L. <%= d.total_pagar.toFixed(2) %></td>
+                    </tr>
+                <% }) %>
+                </tbody>
+                <tfoot>
+                    <tr class="font-bold bg-slate-50">
+                        <td colspan="6">TOTALES</td>
+                        <td>L. <%= sTot.total.toFixed(2) %></td>
+                        <td>L. <%= sTot.he.toFixed(2) %></td>
+                        <td>L. <%= sTot.salhe.toFixed(2) %></td>
+                        <td>L. <%= sTot.ihss.toFixed(2) %></td>
+                        <td>L. <%= sTot.rap.toFixed(2) %></td>
+                        <td>—</td>
+                        <td>L. <%= sTot.ded.toFixed(2) %></td>
+                        <td>L. <%= sTot.pagar.toFixed(2) %></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Baucher individual por empleado con firma -->
+        <% detalle.forEach(d => { %>
+        <div class="avoid-break border rounded-lg p-4 mb-4">
+            <div class="flex justify-between text-xs mb-2">
+                <div>
+                    <p class="font-bold"><%= d.nombre_completo %></p>
+                    <p class="text-slate-500">Cuenta contable: <%= d.cuenta_contable || d.codigo_contable || '—' %> · <%= d.departamento %></p>
+                </div>
+                <p class="font-bold text-right">Total a Pagar<br><span class="text-lg text-[#0D9488]">L. <%= d.total_pagar.toFixed(2) %></span></p>
+            </div>
+            <table class="w-full text-xs">
+                <tr><td class="py-0.5">Salario Ordinario (<%= d.dias_trabajados %> dias)</td><td class="text-right">L. <%= d.salario_ordinario.toFixed(2) %></td></tr>
+                <tr><td class="py-0.5">Septimo Dia <%= d.septimo_dia_procede ? '' : '(no procede)' %></td><td class="text-right">L. <%= d.septimo_dia_pago.toFixed(2) %></td></tr>
+                <tr><td class="py-0.5">Horas Extra (<%= d.horas_extras_horas %> h)</td><td class="text-right">L. <%= d.horas_extras_pago.toFixed(2) %></td></tr>
+                <tr class="font-semibold border-t"><td class="py-0.5">Total Devengado</td><td class="text-right">L. <%= d.sal_mas_he.toFixed(2) %></td></tr>
+                <tr><td class="py-0.5 text-red-600">(-) IHSS</td><td class="text-right text-red-600">L. <%= d.ihss.toFixed(2) %></td></tr>
+                <tr><td class="py-0.5 text-red-600">(-) RAP</td><td class="text-right text-red-600">L. <%= d.rap.toFixed(2) %></td></tr>
+                <% if (d.prestamos > 0) { %><tr><td class="py-0.5 text-red-600">(-) Prestamos</td><td class="text-right text-red-600">L. <%= d.prestamos.toFixed(2) %></td></tr><% } %>
+                <% if (d.vales > 0) { %><tr><td class="py-0.5 text-red-600">(-) Vales</td><td class="text-right text-red-600">L. <%= d.vales.toFixed(2) %></td></tr><% } %>
+                <% if (d.impuesto_vecinal > 0) { %><tr><td class="py-0.5 text-red-600">(-) Impuesto Vecinal</td><td class="text-right text-red-600">L. <%= d.impuesto_vecinal.toFixed(2) %></td></tr><% } %>
+                <% if (d.isr > 0) { %><tr><td class="py-0.5 text-red-600">(-) ISR</td><td class="text-right text-red-600">L. <%= d.isr.toFixed(2) %></td></tr><% } %>
+            </table>
+            <div class="grid grid-cols-2 gap-8 mt-2">
+                <div class="firma-linea">Firma de Revision</div>
+                <div class="firma-linea">Firma de Recibido</div>
+            </div>
+        </div>
+        <% }) %>
+
+    <% } else { %>
+        <!-- ===== FORMATO TICKET: un voucher compacto por empleado ===== -->
+        <% detalle.forEach(d => { %>
+        <div class="avoid-break border-b border-dashed pb-3 mb-3">
+            <p class="font-bold"><%= d.nombre_completo %></p>
+            <p class="text-slate-500">Cta: <%= d.cuenta_contable || d.codigo_contable || '—' %></p>
+            <table class="w-full mt-1">
+                <tr><td>Salario</td><td class="text-right">L. <%= d.salario_ordinario.toFixed(2) %></td></tr>
+                <tr><td>7mo Dia</td><td class="text-right">L. <%= d.septimo_dia_pago.toFixed(2) %></td></tr>
+                <tr><td>H. Extra</td><td class="text-right">L. <%= d.horas_extras_pago.toFixed(2) %></td></tr>
+                <tr><td>IHSS</td><td class="text-right">-L. <%= d.ihss.toFixed(2) %></td></tr>
+                <tr><td>RAP</td><td class="text-right">-L. <%= d.rap.toFixed(2) %></td></tr>
+                <tr><td>Otras Ded.</td><td class="text-right">-L. <%= (d.prestamos+d.vales+d.impuesto_vecinal+d.isr).toFixed(2) %></td></tr>
+                <tr class="font-bold border-t"><td>TOTAL</td><td class="text-right">L. <%= d.total_pagar.toFixed(2) %></td></tr>
+            </table>
+            <div class="firma-linea">Firma</div>
+        </div>
+        <% }) %>
+    <% } %>
+
+    <div class="text-center text-[10px] text-slate-400 mt-6 pt-3 border-t">
+        Generado por NominaCore HN — Metric Solutions &amp; POS — WhatsApp +504 <%= cfg.whatsapp_contacto %>
+    </div>
+</div>
+
+<script>
+const config = {
+    vistaPreviaDefault: <%= cfg.vista_previa_impresion_default ? 'true' : 'false' %>
+};
+
+function mostrarPreview() {
+    document.getElementById('pCopias').textContent = document.getElementById('numCopias').value || 1;
+    document.getElementById('pFormato').textContent = '<%= formato %>';
+    const hoja = document.getElementById('hoja-imprimible').outerHTML;
+    const frame = document.getElementById('previewFrame');
+    frame.srcdoc = '<html><head><script src="https://cdn.tailwindcss.com"><\/script><link rel="stylesheet" href="/css/estilos.css"></head><body>' + hoja + '</body></html>';
+    document.getElementById('modalPreview').classList.remove('hidden');
+    document.getElementById('modalPreview').classList.add('flex');
+}
+function cerrarPreview() {
+    document.getElementById('modalPreview').classList.add('hidden');
+    document.getElementById('modalPreview').classList.remove('flex');
+}
+function descargarPDF() {
+    alert('Se abrira el dialogo de impresion: selecciona "Guardar como PDF" como destino/impresora.');
+    window.print();
+}
+// Numero de copias: usamos window.print() nativo, que ya permite elegir
+// copias e impresora desde el dialogo del sistema operativo/navegador.
+window.addEventListener('load', () => {
+    if (config.vistaPreviaDefault) {
+        // Vista previa habilitada por defecto: no se imprime directo.
+    } else {
+        // Modo "impresion directa": se podria auto-disparar window.print()
+        // aqui si el usuario configura esa preferencia.
+    }
+});
+</script>
+</body>
+</html>

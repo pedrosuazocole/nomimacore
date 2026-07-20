@@ -1,0 +1,126 @@
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+    <h1 class="text-2xl font-bold text-[#1B2A4A]">Programacion de Horarios</h1>
+    <div class="flex gap-2">
+        <a href="/turnos?semana=<%= semanaAnterior %>" class="btn btn-outline">&larr; Semana anterior</a>
+        <a href="/turnos?semana=<%= semanaSiguiente %>" class="btn btn-outline">Semana siguiente &rarr;</a>
+    </div>
+</div>
+
+<p class="text-sm text-slate-600 mb-4">Semana del <strong><%= semanaInicio %></strong> al <strong><%= semanaFin %></strong>. Haz clic en una celda para capturar hora de entrada/salida real.</p>
+
+<div class="card table-scroll">
+    <table class="table-nomina" id="tablaMatriz">
+        <thead>
+            <tr>
+                <th>Empleado</th>
+                <% dias.forEach(d => { %><th><%= d.nombre %><br><span class="font-normal text-xs opacity-80"><%= d.fecha %></span></th><% }) %>
+                <th>Total Semana</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% empleados.forEach(emp => { %>
+            <tr>
+                <td class="font-medium whitespace-nowrap"><%= emp.nombre_completo %><br><span class="text-xs text-slate-500"><%= emp.tipo_jornada %></span></td>
+                <% let totalFila = 0; %>
+                <% dias.forEach(d => {
+                    const t = indice[emp.id + '_' + d.fecha];
+                    const horas = t ? t.horas_trabajadas : 0;
+                    totalFila += horas || 0;
+                %>
+                    <td>
+                        <button type="button"
+                            class="celda-turno w-full text-left px-2 py-1 rounded hover:bg-teal-50 border border-transparent hover:border-teal-300"
+                            data-empleado="<%= emp.id %>" data-fecha="<%= d.fecha %>" data-dia="<%= d.nombre %>"
+                            data-entrada="<%= t ? (t.hora_entrada_real || t.hora_entrada_programada || '') : '' %>"
+                            data-salida="<%= t ? (t.hora_salida_real || t.hora_salida_programada || '') : '' %>"
+                            data-libre="<%= t && t.es_dia_libre ? '1' : '0' %>">
+                            <% if (t && t.es_dia_libre) { %>
+                                <span class="text-xs text-slate-400">Libre</span>
+                            <% } else if (t) { %>
+                                <span class="text-xs"><%= t.hora_entrada_real || t.hora_entrada_programada %> - <%= t.hora_salida_real || t.hora_salida_programada %></span>
+                                <br><span class="text-xs font-semibold text-[#0D9488]"><%= horas %> h</span>
+                            <% } else { %>
+                                <span class="text-xs text-slate-300">+ asignar</span>
+                            <% } %>
+                        </button>
+                    </td>
+                <% }) %>
+                <td class="font-bold"><%= totalFila.toFixed(2) %> h</td>
+            </tr>
+        <% }) %>
+        <% if (empleados.length === 0) { %>
+            <tr><td colspan="9" class="text-center text-slate-500 py-6">No hay empleados activos. Registra empleados primero.</td></tr>
+        <% } %>
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal captura de turno -->
+<div id="modalTurno" class="fixed inset-0 bg-black/40 hidden items-center justify-center z-50 p-4">
+    <form id="formTurno" class="card w-full max-w-sm">
+        <h2 class="font-bold text-lg mb-3 text-[#1B2A4A]">Capturar Turno</h2>
+        <p class="text-sm text-slate-600 mb-3"><span id="mEmpleadoNombre"></span> — <span id="mDia"></span> <span id="mFecha"></span></p>
+        <input type="hidden" name="empleado_id" id="mEmpleadoId">
+        <input type="hidden" name="fecha" id="mFecha_input">
+        <input type="hidden" name="dia_semana" id="mDiaSemana">
+
+        <label class="flex items-center gap-2 text-sm mb-3">
+            <input type="checkbox" id="mLibre" name="es_dia_libre"> Es dia libre / descanso
+        </label>
+
+        <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+                <label class="block text-xs font-medium mb-1">Hora Entrada</label>
+                <input class="input" type="time" name="hora_entrada_real" id="mEntrada">
+            </div>
+            <div>
+                <label class="block text-xs font-medium mb-1">Hora Salida</label>
+                <input class="input" type="time" name="hora_salida_real" id="mSalida">
+            </div>
+        </div>
+
+        <div class="flex gap-2 justify-end">
+            <button type="button" id="mCancelar" class="btn btn-outline">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</div>
+
+<script>
+const modal = document.getElementById('modalTurno');
+document.querySelectorAll('.celda-turno').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.getElementById('mEmpleadoId').value = btn.dataset.empleado;
+        document.getElementById('mFecha_input').value = btn.dataset.fecha;
+        document.getElementById('mDiaSemana').value = btn.dataset.dia;
+        document.getElementById('mEmpleadoNombre').textContent = btn.closest('tr').querySelector('td').textContent.trim();
+        document.getElementById('mDia').textContent = btn.dataset.dia;
+        document.getElementById('mFecha').textContent = btn.dataset.fecha;
+        document.getElementById('mEntrada').value = btn.dataset.entrada || '';
+        document.getElementById('mSalida').value = btn.dataset.salida || '';
+        document.getElementById('mLibre').checked = btn.dataset.libre === '1';
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    });
+});
+document.getElementById('mCancelar').addEventListener('click', () => {
+    modal.classList.add('hidden'); modal.classList.remove('flex');
+});
+document.getElementById('formTurno').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = Object.fromEntries(fd.entries());
+    payload.es_dia_libre = document.getElementById('mLibre').checked;
+    try {
+        const resp = await fetch('/turnos/dia', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error('Error guardando turno');
+        location.reload();
+    } catch (err) {
+        alert('No se pudo guardar el turno: ' + err.message);
+    }
+});
+</script>

@@ -1,0 +1,86 @@
+<h1 class="text-2xl font-bold text-[#1B2A4A] mb-2">Configuracion</h1>
+<p class="text-sm text-slate-600 mb-5">
+    ⚠️ Los porcentajes y techos de IHSS/RAP cambian por resolucion oficial periodicamente.
+    Verifica siempre las tablas vigentes antes de procesar planilla real.
+</p>
+
+<form method="POST" action="/configuracion" class="card grid grid-cols-1 md:grid-cols-2 gap-4">
+    <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1">Empresa</h2>
+    <div>
+        <label class="block text-sm font-medium mb-1">Nombre de la Empresa</label>
+        <input class="input" type="text" name="empresa_nombre" value="<%= cfg.empresa_nombre %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">RTN</label>
+        <input class="input" type="text" name="empresa_rtn" value="<%= cfg.empresa_rtn || '' %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">WhatsApp de Contacto (sin +504)</label>
+        <input class="input" type="text" name="whatsapp_contacto" value="<%= cfg.whatsapp_contacto %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Dias por Mes (para salario diario)</label>
+        <input class="input" type="number" name="dias_mes_planilla" value="<%= cfg.dias_mes_planilla %>">
+    </div>
+
+    <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1 mt-2">Jornadas Legales (horas/semana)</h2>
+    <div>
+        <label class="block text-sm font-medium mb-1">Jornada Diurna</label>
+        <input class="input" type="number" step="0.5" name="horas_jornada_diurna" value="<%= cfg.horas_jornada_diurna %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Jornada Nocturna</label>
+        <input class="input" type="number" step="0.5" name="horas_jornada_nocturna" value="<%= cfg.horas_jornada_nocturna %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Jornada Mixta</label>
+        <input class="input" type="number" step="0.5" name="horas_jornada_mixta" value="<%= cfg.horas_jornada_mixta %>">
+    </div>
+    <div></div>
+
+    <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1 mt-2">Recargos por Hora Extra</h2>
+    <div>
+        <label class="block text-sm font-medium mb-1">Recargo 25% (multiplicador)</label>
+        <input class="input" type="number" step="0.01" name="recargo_25" value="<%= cfg.recargo_25 %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Recargo 50% (multiplicador)</label>
+        <input class="input" type="number" step="0.01" name="recargo_50" value="<%= cfg.recargo_50 %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Recargo 75% (multiplicador)</label>
+        <input class="input" type="number" step="0.01" name="recargo_75" value="<%= cfg.recargo_75 %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Recargo 100% (multiplicador)</label>
+        <input class="input" type="number" step="0.01" name="recargo_100" value="<%= cfg.recargo_100 %>">
+    </div>
+
+    <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1 mt-2">IHSS y RAP</h2>
+    <div>
+        <label class="block text-sm font-medium mb-1">IHSS % Empleado (ej: 0.035 = 3.5%)</label>
+        <input class="input" type="number" step="0.0001" name="ihss_porcentaje_empleado" value="<%= cfg.ihss_porcentaje_empleado %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Techo Salarial IHSS (L.)</label>
+        <input class="input" type="number" step="0.01" name="ihss_techo_salarial" value="<%= cfg.ihss_techo_salarial %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">RAP % Empleado (ej: 0.015 = 1.5%)</label>
+        <input class="input" type="number" step="0.0001" name="rap_porcentaje_empleado" value="<%= cfg.rap_porcentaje_empleado %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Techo Salarial RAP (L.)</label>
+        <input class="input" type="number" step="0.01" name="rap_techo_salarial" value="<%= cfg.rap_techo_salarial %>">
+    </div>
+
+    <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1 mt-2">Impresion</h2>
+    <label class="flex items-center gap-2 text-sm md:col-span-2">
+        <input type="checkbox" name="vista_previa_impresion_default" <%= cfg.vista_previa_impresion_default ? 'checked' : '' %>>
+        Mostrar siempre vista previa antes de imprimir (recomendado)
+    </label>
+
+    <div class="md:col-span-2 pt-2">
+        <button class="btn btn-primary">Guardar Configuracion</button>
+    </div>
+</form>

@@ -1,0 +1,51 @@
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+    <h1 class="text-2xl font-bold text-[#1B2A4A]">Planillas</h1>
+    <a href="/planillas/nueva" class="btn btn-primary">+ Nueva Planilla</a>
+</div>
+
+<form method="GET" class="card mb-5 flex flex-wrap gap-3 items-end">
+    <div>
+        <label class="block text-xs font-medium mb-1">Tipo de Periodo</label>
+        <select class="input" name="tipo">
+            <option value="">Todos</option>
+            <option value="SEMANAL" <%= filtros.tipo === 'SEMANAL' ? 'selected' : '' %>>Semanal</option>
+            <option value="QUINCENAL" <%= filtros.tipo === 'QUINCENAL' ? 'selected' : '' %>>Quincenal</option>
+            <option value="MENSUAL" <%= filtros.tipo === 'MENSUAL' ? 'selected' : '' %>>Mensual</option>
+        </select>
+    </div>
+    <button class="btn btn-secondary">Filtrar</button>
+</form>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead>
+            <tr><th>Nombre</th><th>Periodo</th><th>Rango de Fechas</th><th>Estado</th><th>Total a Pagar</th><th></th></tr>
+        </thead>
+        <tbody>
+        <% if (planillas.length === 0) { %>
+            <tr><td colspan="6" class="text-center text-slate-500 py-6">Aun no has creado ninguna planilla.</td></tr>
+        <% } %>
+        <% planillas.forEach(p => { %>
+            <tr>
+                <td class="font-medium"><%= p.nombre %></td>
+                <td><span class="text-xs px-2 py-1 rounded-full bg-slate-100"><%= p.tipo_periodo %></span></td>
+                <td><%= p.fecha_inicio %> &rarr; <%= p.fecha_fin %></td>
+                <td>
+                    <span class="text-xs px-2 py-1 rounded-full
+                        <%= p.estado === 'PROCESADA' ? 'bg-emerald-100 text-emerald-700' : (p.estado === 'PAGADA' ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700') %>">
+                        <%= p.estado %>
+                    </span>
+                </td>
+                <td class="font-semibold">L. <%= Number(p.total_pagar || 0).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td class="whitespace-nowrap">
+                    <a href="/planillas/<%= p.id %>/procesar" class="text-[#0D9488] font-medium mr-3">Procesar</a>
+                    <a href="/planillas/<%= p.id %>/reporte" class="text-[#1B2A4A] font-medium mr-3">Reporte</a>
+                    <form method="POST" action="/planillas/<%= p.id %>?_method=DELETE" class="inline" onsubmit="return confirm('¿Eliminar esta planilla?');">
+                        <button class="text-red-600 font-medium">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</div>

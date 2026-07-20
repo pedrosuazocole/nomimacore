@@ -1,0 +1,75 @@
+/* =====================================================================
+   NominaCore HN — estilos globales
+   Tailwind (CDN) cubre la mayoria; aqui van clases reutilizables y
+   reglas de impresion (@media print) para reportes tipo carta/ticket.
+   ===================================================================== */
+
+.nav-link {
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.5rem;
+    color: #e2e8f0;
+    transition: background-color .15s ease;
+}
+.nav-link:hover { background-color: rgba(255,255,255,.08); }
+.nav-active { background-color: #0D9488; color: #fff; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem 1.1rem;
+    border-radius: .6rem;
+    font-weight: 600;
+    font-size: .875rem;
+    transition: filter .15s ease;
+}
+.btn:hover { filter: brightness(0.92); }
+.btn-primary { background-color: #0D9488; color: #fff; }
+.btn-secondary { background-color: #1B2A4A; color: #fff; }
+.btn-accent { background-color: #D97A2C; color: #fff; }
+.btn-outline { background-color: #fff; color: #1B2A4A; border: 1px solid #cbd5e1; }
+.btn-danger { background-color: #dc2626; color: #fff; }
+
+.card {
+    background: #fff;
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    padding: 1.25rem;
+}
+
+.input, select.input, textarea.input {
+    width: 100%;
+    padding: .55rem .75rem;
+    border-radius: .5rem;
+    border: 1px solid #cbd5e1;
+    font-size: .9rem;
+}
+.input:focus { outline: 2px solid #0D9488; outline-offset: 1px; }
+
+table.table-nomina { width: 100%; border-collapse: collapse; font-size: .85rem; }
+table.table-nomina th {
+    background: #1B2A4A; color: #fff; text-align: left;
+    padding: .5rem .6rem; white-space: nowrap;
+}
+table.table-nomina td { padding: .45rem .6rem; border-bottom: 1px solid #e2e8f0; }
+table.table-nomina tbody tr:hover { background: #f8fafc; }
+
+/* Responsive: tablas con scroll horizontal en movil/tablet */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* =====================================================================
+   IMPRESION
+   ===================================================================== */
+@media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; }
+    .print-page {
+        width: 100%;
+        margin: 0;
+        box-shadow: none !important;
+    }
+    .print-ticket { width: 80mm; font-size: 10px; }
+    .print-carta { width: 100%; font-size: 12px; }
+    table.table-nomina th { background: #1B2A4A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .avoid-break { break-inside: avoid; }
+}

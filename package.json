@@ -1,0 +1,29 @@
+{
+  "name": "nominacore-hn",
+  "version": "1.0.0",
+  "description": "NominaCore HN - Sistema de Gestion de Planillas y Control de Horarios (Honduras) - by Metric Solutions",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "node src/database/init.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.3.0",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-ejs-layouts": "^2.5.1",
+    "method-override": "^3.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=18.x"
+  },
+  "author": "Metric Solutions & POS",
+  "license": "UNLICENSED"
+}

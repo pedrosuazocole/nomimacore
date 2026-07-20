@@ -1,0 +1,35 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../config/db');
+
+router.get('/', (req, res) => {
+    const cfg = db.prepare('SELECT * FROM configuracion WHERE id = 1').get();
+    res.render('configuracion', { title: 'Configuracion', cfg, ok: req.query.ok });
+});
+
+router.post('/', (req, res) => {
+    const b = req.body;
+    db.prepare(`
+        UPDATE configuracion SET
+            empresa_nombre = ?, empresa_rtn = ?,
+            horas_jornada_diurna = ?, horas_jornada_nocturna = ?, horas_jornada_mixta = ?,
+            recargo_25 = ?, recargo_50 = ?, recargo_75 = ?, recargo_100 = ?,
+            ihss_porcentaje_empleado = ?, ihss_techo_salarial = ?,
+            rap_porcentaje_empleado = ?, rap_techo_salarial = ?,
+            dias_mes_planilla = ?, whatsapp_contacto = ?,
+            vista_previa_impresion_default = ?,
+            updated_at = datetime('now','localtime')
+        WHERE id = 1
+    `).run(
+        b.empresa_nombre, b.empresa_rtn,
+        Number(b.horas_jornada_diurna), Number(b.horas_jornada_nocturna), Number(b.horas_jornada_mixta),
+        Number(b.recargo_25), Number(b.recargo_50), Number(b.recargo_75), Number(b.recargo_100),
+        Number(b.ihss_porcentaje_empleado), Number(b.ihss_techo_salarial),
+        Number(b.rap_porcentaje_empleado), Number(b.rap_techo_salarial),
+        Number(b.dias_mes_planilla), b.whatsapp_contacto,
+        b.vista_previa_impresion_default ? 1 : 0
+    );
+    res.redirect('/configuracion?ok=Configuracion guardada correctamente');
+});
+
+module.exports = router;

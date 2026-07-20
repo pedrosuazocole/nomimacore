@@ -1,0 +1,73 @@
+<div class="mb-5">
+    <h1 class="text-2xl font-bold text-[#1B2A4A]"><%= planilla.nombre %></h1>
+    <p class="text-sm text-slate-600"><%= planilla.tipo_periodo %> · <%= planilla.fecha_inicio %> al <%= planilla.fecha_fin %> · <%= planilla.empresa || 'Sin empresa asignada' %></p>
+</div>
+
+<div class="card mb-4 text-sm bg-teal-50 border border-teal-200">
+    Las <strong>horas totales</strong> y <strong>dias trabajados</strong> se precargaron desde el modulo de Horarios.
+    Ajusta lo necesario, clasifica las horas extra por franja horaria y captura las deducciones antes de guardar.
+</div>
+
+<form method="POST" action="/planillas/<%= planilla.id %>/procesar">
+<div class="card table-scroll">
+    <table class="table-nomina" id="tablaProcesar">
+        <thead>
+            <tr>
+                <th>Empleado</th>
+                <th>Salario Mensual</th>
+                <th>Horas Totales</th>
+                <th>Dias Trab.</th>
+                <th>7mo Dia</th>
+                <th>HE 25%<br><span class="font-normal">2pm-7pm</span></th>
+                <th>HE 50%<br><span class="font-normal">7pm-9pm</span></th>
+                <th>HE 75%<br><span class="font-normal">6pm-6am</span></th>
+                <th>HE 100%<br><span class="font-normal">Feriado</span></th>
+                <th>Prestamos</th>
+                <th>Vales</th>
+                <th>Imp. Vecinal</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% filas.forEach(f => {
+            const d = f.detalleExistente;
+        %>
+            <% const id = f.empleado.id; %>
+            <tr>
+                <td class="font-medium whitespace-nowrap">
+                    <%= f.empleado.nombre_completo %>
+                    <br><span class="text-xs text-slate-500"><%= f.empleado.tipo_jornada %> (<%= f.horasOrdinarias %> h ordinarias)</span>
+                    <input type="hidden" name="empleado_ids[]" value="<%= id %>">
+                </td>
+                <td>L. <%= Number(f.empleado.salario_base).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td><input class="input" type="number" step="0.01" name="horas_totales[emp_<%= id %>]" value="<%= f.horasTotales %>"></td>
+                <td><input class="input w-20" type="number" step="0.5" name="dias_trabajados[emp_<%= id %>]" value="<%= d ? d.dias_trabajados : f.diasTrabajados %>"></td>
+                <td class="text-center">
+                    <input type="checkbox" name="septimo_dia_procede[emp_<%= id %>]" value="1" <%= (d ? d.septimo_dia_procede : 1) ? 'checked' : '' %>>
+                </td>
+                <td><input class="input w-20" type="number" step="0.01" name="bucket_25[emp_<%= id %>]" value="0"></td>
+                <td><input class="input w-20" type="number" step="0.01" name="bucket_50[emp_<%= id %>]" value="0"></td>
+                <td><input class="input w-20" type="number" step="0.01" name="bucket_75[emp_<%= id %>]" value="0"></td>
+                <td><input class="input w-20" type="number" step="0.01" name="bucket_100[emp_<%= id %>]" value="0"></td>
+                <td><input class="input w-24" type="number" step="0.01" name="prestamos[emp_<%= id %>]" value="<%= d ? d.prestamos : 0 %>"></td>
+                <td><input class="input w-24" type="number" step="0.01" name="vales[emp_<%= id %>]" value="<%= d ? d.vales : 0 %>"></td>
+                <td><input class="input w-24" type="number" step="0.01" name="impuesto_vecinal[emp_<%= id %>]" value="<%= d ? d.impuesto_vecinal : 0 %>"></td>
+                <td><input type="hidden" name="isr[emp_<%= id %>]" value="0"></td>
+            </tr>
+        <% }) %>
+        <% if (filas.length === 0) { %>
+            <tr><td colspan="12" class="text-center text-slate-500 py-6">No hay empleados activos para procesar.</td></tr>
+        <% } %>
+        </tbody>
+    </table>
+</div>
+
+<div class="flex gap-3 mt-5">
+    <button class="btn btn-primary">Calcular y Guardar Planilla</button>
+    <a href="/planillas" class="btn btn-outline">Cancelar</a>
+</div>
+</form>
+
+<p class="text-xs text-slate-500 mt-3">
+    Nota: el sistema clasifica las horas extra segun la franja que indiques (2pm-7pm = 25%, 7pm-9pm = 50%, 6pm-6am = 75%, feriado/descanso = 100%),
+    igual que la hoja de calculo de referencia. IHSS y RAP se calculan con el porcentaje y techo definidos en <a href="/configuracion" class="text-[#0D9488] underline">Configuracion</a> — verifica que esten actualizados.
+</p>
