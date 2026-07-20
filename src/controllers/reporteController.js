@@ -93,6 +93,7 @@ const ReporteController = {
         const cuentas = {
             salarioOrdinario: sumarCampo(detalle, 'salario_ordinario') + sumarCampo(detalle, 'septimo_dia_pago'),
             salarioExtraordinario: sumarCampo(detalle, 'horas_extras_pago'),
+            transporte: sumarCampo(detalle, 'transporte'),
             ihss: sumarCampo(detalle, 'ihss'),
             rap: sumarCampo(detalle, 'rap'),
             prestamos: sumarCampo(detalle, 'prestamos'),
@@ -101,20 +102,20 @@ const ReporteController = {
             isr: sumarCampo(detalle, 'isr'),
             totalPagado: sumarCampo(detalle, 'total_pagar')
         };
-        cuentas.totalGasto = round2(cuentas.salarioOrdinario + cuentas.salarioExtraordinario);
+        cuentas.totalGasto = round2(cuentas.salarioOrdinario + cuentas.salarioExtraordinario + cuentas.transporte);
         cuentas.totalRetenciones = round2(cuentas.ihss + cuentas.rap + cuentas.prestamos + cuentas.vales + cuentas.impuestoVecinal + cuentas.isr);
 
         if (req.query.export === 'xlsx') {
             return enviarExcel(res, 'reporte-contable-nomina.xlsx', {
                 titulo: 'Reporte Contable de Nomina',
                 subtitulo: `${f.fecha_inicio} al ${f.fecha_fin}${f.empresa ? ' - ' + f.empresa : ''}`,
-                headers: ['Empleado', 'Codigo/Cuenta', 'Planilla', 'Salario Ordinario', 'Horas Extra', 'IHSS', 'RAP', 'Prestamos', 'Vales', 'Imp. Vecinal', 'ISR', 'Total Pagado'],
+                headers: ['Empleado', 'Codigo/Cuenta', 'Planilla', 'Salario Ordinario', 'Horas Extra', 'Transporte', 'IHSS', 'RAP', 'Prestamos', 'Vales', 'Imp. Vecinal', 'ISR', 'Total Pagado'],
                 filas: detalle.map(d => [
                     d.nombre_completo, d.cuenta_contable || d.codigo_contable || '', d.planilla_nombre,
-                    round2(d.salario_ordinario + d.septimo_dia_pago), d.horas_extras_pago, d.ihss, d.rap,
+                    round2(d.salario_ordinario + d.septimo_dia_pago), d.horas_extras_pago, (d.transporte || 0), d.ihss, d.rap,
                     d.prestamos, d.vales, d.impuesto_vecinal, d.isr, d.total_pagar
                 ]),
-                totales: ['TOTALES', '', '', cuentas.salarioOrdinario, cuentas.salarioExtraordinario, cuentas.ihss, cuentas.rap, cuentas.prestamos, cuentas.vales, cuentas.impuestoVecinal, cuentas.isr, cuentas.totalPagado]
+                totales: ['TOTALES', '', '', cuentas.salarioOrdinario, cuentas.salarioExtraordinario, cuentas.transporte, cuentas.ihss, cuentas.rap, cuentas.prestamos, cuentas.vales, cuentas.impuestoVecinal, cuentas.isr, cuentas.totalPagado]
             });
         }
 
