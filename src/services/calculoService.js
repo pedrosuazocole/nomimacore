@@ -108,10 +108,16 @@ function calcularHorasExtraSemana({ salarioMensual, horasTotales, tipoJornada, b
  *   septimo_dia_pago   = (1 si procede : 0) * salario_diario
  *   salario_total      = salario_ordinario + septimo_dia_pago
  *   sal_mas_he         = salario_total + horas_extras_pago
- *   IHSS y RAP         = segun tabla/porcentaje configurado (con techo)
  *   subtotal_neto      = sal_mas_he - IHSS - RAP
  *   total_deducciones  = prestamos + vales + impuesto_vecinal + isr
  *   total_pagar        = subtotal_neto - total_deducciones
+ *
+ * IHSS y RAP se reciben como parametros (capturados por el usuario en
+ * el formulario de Procesar Planilla) en vez de calcularse por
+ * porcentaje: el monto oficial depende de una tabla de rangos
+ * salariales del IHSS/RAP, no de un porcentaje plano, asi que es mas
+ * confiable que el usuario digite el valor exacto de la tabla vigente.
+ * calcularIhssRap() sigue disponible como sugerencia/estimado inicial.
  *
  * El Septimo Dia (dia de descanso obligatorio) procede cuando el
  * empleado cumplio su semana laboral completa segun lo programado
@@ -123,6 +129,8 @@ function calcularDetalleEmpleado({
     diasTrabajados,
     septimoDiaProcede,
     horasExtrasPago = 0,
+    ihss = 0,
+    rap = 0,
     prestamos = 0,
     vales = 0,
     impuestoVecinal = 0,
@@ -136,8 +144,6 @@ function calcularDetalleEmpleado({
     const salarioTotal = round2(salarioOrdinario + septimoDiaPago);
     const salMasHE = round2(salarioTotal + horasExtrasPago);
 
-    const { ihss, rap } = calcularIhssRap(salMasHE, cfg);
-
     const subtotalNeto = round2(salMasHE - ihss - rap);
     const totalDeducciones = round2(prestamos + vales + impuestoVecinal + isr);
     const totalPagar = round2(subtotalNeto - totalDeducciones);
@@ -148,8 +154,8 @@ function calcularDetalleEmpleado({
         septimoDiaPago,
         salarioTotal,
         salMasHE,
-        ihss,
-        rap,
+        ihss: round2(ihss),
+        rap: round2(rap),
         subtotalNeto,
         totalDeducciones,
         totalPagar
