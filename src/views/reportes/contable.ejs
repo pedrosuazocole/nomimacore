@@ -53,6 +53,7 @@
         <table class="w-full text-sm">
             <tr class="border-b"><td class="py-1.5">Salario Ordinario + Septimo Dia</td><td class="text-right font-medium">L. <%= cuentas.salarioOrdinario.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
             <tr class="border-b"><td class="py-1.5">Salario Extraordinario (Horas Extra)</td><td class="text-right font-medium">L. <%= cuentas.salarioExtraordinario.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
+            <tr class="border-b"><td class="py-1.5">Transporte</td><td class="text-right font-medium">L. <%= cuentas.transporte.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
             <tr class="font-bold"><td class="py-2">TOTAL GASTO DE NOMINA</td><td class="text-right text-[#1B2A4A]">L. <%= cuentas.totalGasto.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td></tr>
         </table>
     </div>
@@ -75,7 +76,7 @@
 <h2 class="font-bold text-[#1B2A4A] mb-3">Detalle por Empleado</h2>
 <div class="card table-scroll">
     <table class="table-nomina">
-        <thead><tr><th>Empleado</th><th>Cuenta</th><th>Planilla</th><th>Sal. Ordinario</th><th>H. Extra</th><th>IHSS</th><th>RAP</th><th>Prestamos</th><th>Vales</th><th>Imp.Vecinal</th><th>Total Pagado</th></tr></thead>
+        <thead><tr><th>Empleado</th><th>Cuenta</th><th>Planilla</th><th>Sal. Ordinario</th><th>H. Extra</th><th>Transporte</th><th>IHSS</th><th>RAP</th><th>Prestamos</th><th>Vales</th><th>Imp.Vecinal</th><th>Total Pagado</th></tr></thead>
         <tbody>
         <% detalle.forEach(d => { %>
             <tr class="avoid-break">
@@ -84,6 +85,7 @@
                 <td><%= d.planilla_nombre %></td>
                 <td>L. <%= (d.salario_ordinario + d.septimo_dia_pago).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
                 <td>L. <%= Number(d.horas_extras_pago).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(d.transporte || 0).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
                 <td>L. <%= Number(d.ihss).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
                 <td>L. <%= Number(d.rap).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
                 <td>L. <%= Number(d.prestamos).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
