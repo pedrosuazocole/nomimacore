@@ -7,9 +7,10 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
 const db = require('../config/db');
 
-function init() {
+async function init() {
     const schemaPath = path.join(__dirname, 'schema.sql');
     const schema = fs.readFileSync(schemaPath, 'utf8');
 
@@ -33,7 +34,33 @@ function init() {
         );
     }
 
+    // Crea el usuario ADMIN por defecto solo si todavia no hay ningun
+    // usuario en el sistema (primer arranque). La contraseña debe
+    // cambiarse de inmediato desde /usuarios.
+    const totalUsuarios = db.prepare('SELECT COUNT(*) c FROM usuarios').get().c;
+    if (totalUsuarios === 0) {
+        const usuarioDefault = process.env.ADMIN_USERNAME || 'admin';
+        const passwordDefault = process.env.ADMIN_PASSWORD || 'NominaCore2026!';
+        const hash = await bcrypt.hash(passwordDefault, 10);
+
+        db.prepare(`
+            INSERT INTO usuarios (username, password_hash, nombre_completo, rol, activo)
+            VALUES (?, ?, 'Administrador', 'ADMIN', 1)
+        `).run(usuarioDefault, hash);
+
+        console.log('👤 Usuario administrador creado:');
+        console.log(`   Usuario:    ${usuarioDefault}`);
+        console.log(`   Contraseña: ${passwordDefault}`);
+        console.log('   ⚠️  Cambia esta contraseña de inmediato desde el modulo Usuarios.');
+    }
+
     console.log('✅ Base de datos lista en:', process.env.DB_PATH || './data/nominacore.db');
 }
 
-init();
+module.exports = init;
+
+// Permite seguir usando "node src/database/init.js" o "npm run migrate"
+// directamente desde la terminal.
+if (require.main === module) {
+    init();
+}

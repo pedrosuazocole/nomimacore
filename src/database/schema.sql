@@ -7,6 +7,25 @@
 PRAGMA foreign_keys = ON;
 
 -- ---------------------------------------------------------------------
+-- USUARIOS (login del sistema)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS usuarios (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    username            TEXT NOT NULL UNIQUE,          -- usado para iniciar sesion (puede ser email)
+    password_hash       TEXT NOT NULL,
+    nombre_completo     TEXT NOT NULL,
+    rol                 TEXT NOT NULL DEFAULT 'OPERADOR' CHECK (rol IN ('ADMIN','OPERADOR')),
+    activo              INTEGER NOT NULL DEFAULT 1,
+    intentos_fallidos   INTEGER NOT NULL DEFAULT 0,
+    bloqueado_hasta     TEXT,                            -- timestamp ISO; NULL = no bloqueado
+    ultimo_acceso       TEXT,
+    created_at          TEXT DEFAULT (datetime('now','localtime')),
+    updated_at          TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
+
+-- ---------------------------------------------------------------------
 -- CONFIGURACION: parametros legales/editables (jornadas, recargos,
 -- IHSS, RAP). Se guardan como fila unica editable desde la UI, en vez
 -- de "quemarlos" en el codigo, porque cambian con el tiempo.

@@ -1,0 +1,42 @@
+<h1 class="text-2xl font-bold text-[#1B2A4A] mb-5"><%= title %></h1>
+
+<% if (errores && errores.length) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-300 text-red-700 px-4 py-3 text-sm">
+        <ul class="list-disc pl-5"><% errores.forEach(e => { %><li><%= e %></li><% }) %></ul>
+    </div>
+<% } %>
+
+<form method="POST" action="<%= usuario.id ? '/usuarios/' + usuario.id + '?_method=PUT' : '/usuarios' %>" class="card grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+    <div>
+        <label class="block text-sm font-medium mb-1">Usuario (para iniciar sesion) *</label>
+        <input class="input" type="text" name="username" required <%= usuario.id ? 'readonly' : '' %>
+               value="<%= usuario.username || '' %>" placeholder="ej: jgarcia o jgarcia@correo.com">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Nombre Completo *</label>
+        <input class="input" type="text" name="nombre_completo" required value="<%= usuario.nombre_completo || '' %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Rol</label>
+        <select class="input" name="rol">
+            <option value="OPERADOR" <%= usuario.rol === 'OPERADOR' ? 'selected' : '' %>>Operador (captura horarios y planillas)</option>
+            <option value="ADMIN" <%= usuario.rol === 'ADMIN' ? 'selected' : '' %>>Administrador (acceso total)</option>
+        </select>
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Estado</label>
+        <select class="input" name="activo">
+            <option value="1" <%= usuario.activo !== 0 ? 'selected' : '' %>>Activo</option>
+            <option value="0" <%= usuario.activo === 0 ? 'selected' : '' %>>Inactivo</option>
+        </select>
+    </div>
+    <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1"><%= usuario.id ? 'Nueva Contraseña (dejar en blanco para no cambiarla)' : 'Contraseña *' %></label>
+        <input class="input" type="password" name="password" <%= usuario.id ? '' : 'required' %> minlength="6" placeholder="Minimo 6 caracteres">
+    </div>
+
+    <div class="md:col-span-2 flex gap-3 pt-2">
+        <button class="btn btn-primary">Guardar</button>
+        <a href="/usuarios" class="btn btn-outline">Cancelar</a>
+    </div>
+</form>

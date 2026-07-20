@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es-HN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar Sesion | NominaCore HN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/estilos.css">
+</head>
+<body class="min-h-screen flex items-center justify-center bg-[#1B2A4A] px-4">
+
+<div class="w-full max-w-sm">
+    <div class="text-center mb-6">
+        <span class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0D9488] text-2xl mb-3">🧾</span>
+        <h1 class="text-2xl font-bold text-white">NominaCore <span class="text-[#D97A2C]">HN</span></h1>
+        <p class="text-slate-300 text-sm">Gestion de Planillas y Horarios</p>
+    </div>
+
+    <form method="POST" action="/login" class="bg-white rounded-2xl shadow-lg p-6">
+        <input type="hidden" name="next" value="<%= next || '/planillas' %>">
+
+        <% if (error) { %>
+            <div class="mb-4 rounded-lg bg-red-50 border border-red-300 text-red-700 px-3 py-2 text-sm">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Usuario</label>
+            <input class="input" type="text" name="username" autofocus required placeholder="tu.usuario">
+        </div>
+        <div class="mb-5">
+            <label class="block text-sm font-medium mb-1">Contraseña</label>
+            <input class="input" type="password" name="password" required placeholder="••••••••">
+        </div>
+
+        <button class="btn btn-primary w-full justify-center">Iniciar Sesion</button>
+    </form>
+
+    <p class="text-center text-slate-400 text-xs mt-5">
+        &copy; <%= new Date().getFullYear() %> Metric Solutions &amp; POS · WhatsApp +504 9450-2710
+    </p>
+</div>
+
+</body>
+</html>

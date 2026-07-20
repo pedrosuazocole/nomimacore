@@ -17,11 +17,21 @@
             NominaCore <span class="text-[#D97A2C]">HN</span>
         </a>
         <button id="menuBtn" class="md:hidden text-white text-2xl leading-none">☰</button>
-        <nav id="navLinks" class="w-full md:w-auto hidden md:flex flex-col md:flex-row gap-1 md:gap-2 text-sm font-medium">
+        <nav id="navLinks" class="w-full md:w-auto hidden md:flex flex-col md:flex-row gap-1 md:gap-2 text-sm font-medium items-center">
             <a href="/planillas" class="nav-link <%= currentPath && currentPath.startsWith('/planillas') ? 'nav-active' : '' %>">Planillas</a>
             <a href="/turnos" class="nav-link <%= currentPath && currentPath.startsWith('/turnos') ? 'nav-active' : '' %>">Horarios</a>
             <a href="/empleados" class="nav-link <%= currentPath && currentPath.startsWith('/empleados') ? 'nav-active' : '' %>">Empleados</a>
+            <% if (usuarioActual && usuarioActual.rol === 'ADMIN') { %>
+                <a href="/usuarios" class="nav-link <%= currentPath && currentPath.startsWith('/usuarios') ? 'nav-active' : '' %>">Usuarios</a>
+            <% } %>
             <a href="/configuracion" class="nav-link <%= currentPath && currentPath.startsWith('/configuracion') ? 'nav-active' : '' %>">Configuracion</a>
+            <% if (usuarioActual) { %>
+                <span class="text-slate-300 text-xs px-2 hidden md:inline">|</span>
+                <span class="text-slate-300 text-xs px-2"><%= usuarioActual.nombre %> · <%= usuarioActual.rol %></span>
+                <form method="POST" action="/logout" class="inline">
+                    <button class="nav-link bg-red-600/80 hover:bg-red-600">Salir</button>
+                </form>
+            <% } %>
         </nav>
     </div>
 </header>

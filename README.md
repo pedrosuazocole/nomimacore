@@ -64,7 +64,34 @@ La app queda disponible en `http://localhost:3000`.
    `npm run migrate` manualmente en Railway.
 7. Verifica el estado con el endpoint de diagnostico: `https://tuapp.up.railway.app/api/diag`
 
-## 4. Modulos Principales
+## 4. Login y Usuarios
+
+En el primer arranque (cuando la tabla `usuarios` esta vacia), el
+sistema crea automaticamente un usuario administrador:
+
+```
+Usuario:    admin          (o el valor de ADMIN_USERNAME en .env)
+Contraseña: NominaCore2026! (o el valor de ADMIN_PASSWORD en .env)
+```
+
+⚠️ **Cambia esta contraseña de inmediato** desde `/usuarios` despues del
+primer login (o define `ADMIN_USERNAME`/`ADMIN_PASSWORD` propios en tu
+`.env` antes del primer arranque en Railway).
+
+- Todas las rutas (excepto `/login`) requieren sesion activa.
+- El modulo `/usuarios` (crear, editar, cambiar rol/contraseña) es
+  visible y accesible solo para usuarios con rol **ADMIN**.
+- Rol **OPERADOR**: acceso a Planillas, Horarios, Empleados y Configuracion,
+  sin poder gestionar otros usuarios.
+- Proteccion contra fuerza bruta: 5 intentos fallidos bloquean la cuenta
+  por 15 minutos.
+- Las sesiones se guardan en memoria del proceso (no requieren tablas ni
+  dependencias nativas adicionales); si Railway reinicia el contenedor
+  (redeploy), los usuarios conectados deben iniciar sesion de nuevo —
+  es la unica contrapartida de este enfoque, y es aceptable para una
+  herramienta de uso interno.
+
+## 5. Modulos Principales
 
 - **Empleados** (`/empleados`): CRUD completo — nombre, departamento,
   cuenta contable, salario base, tipo de jornada (diurna/nocturna/mixta).
@@ -76,7 +103,7 @@ La app queda disponible en `http://localhost:3000`.
 - **Configuracion** (`/configuracion`): jornadas legales, recargos por
   hora extra, porcentajes y techos de IHSS/RAP, datos de la empresa.
 
-## 5. Motor de Calculo (resumen)
+## 6. Motor de Calculo (resumen)
 
 Implementado en `src/services/calculoService.js`, replica formula por
 formula la logica de la hoja de calculo de referencia del cliente:
@@ -109,7 +136,7 @@ fijos en el codigo, porque cambian por resolucion oficial periodicamente.
 Verifica siempre la tabla vigente del IHSS y del RAP antes de procesar
 planilla real.
 
-## 6. Impresion de Reportes
+## 7. Impresion de Reportes
 
 El reporte de planilla (`/planillas/:id/reporte`) incluye:
 - Selector de formato: **Carta** (tabla resumen + baucher individual con
@@ -122,7 +149,7 @@ El reporte de planilla (`/planillas/:id/reporte`) incluye:
 - La preferencia "vista previa siempre" vs "impresion directa" se guarda
   en `/configuracion`.
 
-## 7. Notas de Mantenimiento
+## 8. Notas de Mantenimiento
 
 - Los datos de empleados NUNCA se borran fisicamente (baja logica con
   `estado = 'INACTIVO'`) para preservar el historial de planillas.
