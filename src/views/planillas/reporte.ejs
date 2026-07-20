@@ -77,13 +77,14 @@
                     <tr>
                         <th>Colaborador</th><th>Cta. Contable</th><th>Sal. Mensual</th><th>Sal. Diario</th>
                         <th>Dias</th><th>7mo Dia</th><th>Sal. Total</th><th>Horas Extra (L.)</th>
-                        <th>Sal+HE</th><th>IHSS</th><th>RAP</th><th>Otras Ded.</th><th>Total Deduc.</th><th>Total a Pagar</th>
+                        <th>Transporte</th><th>Sal+HE</th><th>IHSS</th><th>RAP</th><th>Otras Ded.</th><th>Total Deduc.</th><th>Total a Pagar</th>
                     </tr>
                 </thead>
                 <tbody>
-                <% let sTot={mensual:0,diario:0,dias:0,septimo:0,total:0,he:0,salhe:0,ihss:0,rap:0,ded:0,pagar:0}; %>
+                <% let sTot={mensual:0,diario:0,dias:0,septimo:0,total:0,he:0,transporte:0,salhe:0,ihss:0,rap:0,ded:0,pagar:0}; %>
                 <% detalle.forEach(d => {
                     sTot.mensual+=d.salario_mensual; sTot.total+=d.salario_total; sTot.he+=d.horas_extras_pago;
+                    sTot.transporte+=(d.transporte||0);
                     sTot.salhe+=d.sal_mas_he; sTot.ihss+=d.ihss; sTot.rap+=d.rap; sTot.ded+=d.total_deducciones; sTot.pagar+=d.total_pagar;
                 %>
                     <tr class="avoid-break">
@@ -95,6 +96,7 @@
                         <td><%= d.septimo_dia_procede ? 'Si' : 'No' %></td>
                         <td>L. <%= d.salario_total.toFixed(2) %></td>
                         <td>L. <%= d.horas_extras_pago.toFixed(2) %></td>
+                        <td>L. <%= (d.transporte||0).toFixed(2) %></td>
                         <td>L. <%= d.sal_mas_he.toFixed(2) %></td>
                         <td>L. <%= d.ihss.toFixed(2) %></td>
                         <td>L. <%= d.rap.toFixed(2) %></td>
@@ -109,6 +111,7 @@
                         <td colspan="6">TOTALES</td>
                         <td>L. <%= sTot.total.toFixed(2) %></td>
                         <td>L. <%= sTot.he.toFixed(2) %></td>
+                        <td>L. <%= sTot.transporte.toFixed(2) %></td>
                         <td>L. <%= sTot.salhe.toFixed(2) %></td>
                         <td>L. <%= sTot.ihss.toFixed(2) %></td>
                         <td>L. <%= sTot.rap.toFixed(2) %></td>
@@ -141,6 +144,7 @@
                 <% if (d.vales > 0) { %><tr><td class="py-0.5 text-red-600">(-) Vales</td><td class="text-right text-red-600">L. <%= d.vales.toFixed(2) %></td></tr><% } %>
                 <% if (d.impuesto_vecinal > 0) { %><tr><td class="py-0.5 text-red-600">(-) Impuesto Vecinal</td><td class="text-right text-red-600">L. <%= d.impuesto_vecinal.toFixed(2) %></td></tr><% } %>
                 <% if (d.isr > 0) { %><tr><td class="py-0.5 text-red-600">(-) ISR</td><td class="text-right text-red-600">L. <%= d.isr.toFixed(2) %></td></tr><% } %>
+                <% if (d.transporte > 0) { %><tr><td class="py-0.5 text-[#0D9488] font-medium">(+) Transporte</td><td class="text-right text-[#0D9488] font-medium">L. <%= d.transporte.toFixed(2) %></td></tr><% } %>
             </table>
             <div class="grid grid-cols-2 gap-3 sm:gap-8 mt-2">
                 <div class="firma-linea">Firma de Revision</div>
@@ -162,6 +166,7 @@
                 <tr><td>IHSS</td><td class="text-right">-L. <%= d.ihss.toFixed(2) %></td></tr>
                 <tr><td>RAP</td><td class="text-right">-L. <%= d.rap.toFixed(2) %></td></tr>
                 <tr><td>Otras Ded.</td><td class="text-right">-L. <%= (d.prestamos+d.vales+d.impuesto_vecinal+d.isr).toFixed(2) %></td></tr>
+                <% if (d.transporte > 0) { %><tr><td>Transporte</td><td class="text-right">+L. <%= d.transporte.toFixed(2) %></td></tr><% } %>
                 <tr class="font-bold border-t"><td>TOTAL</td><td class="text-right">L. <%= d.total_pagar.toFixed(2) %></td></tr>
             </table>
             <div class="firma-linea">Firma</div>

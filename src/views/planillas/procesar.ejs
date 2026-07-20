@@ -5,7 +5,7 @@
 const etiquetaSalarioPeriodo = planilla.tipo_periodo === 'QUINCENAL' ? 'Salario Quincenal'
     : planilla.tipo_periodo === 'SEMANAL' ? 'Salario Semanal'
     : null;
-const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colspans dinamicos (+1 por la nueva columna Horas Extras)
+const totalColumnas = 22 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colspans dinamicos
 %>
 <div class="mb-5">
     <h1 class="text-2xl font-bold text-[#1B2A4A]"><%= planilla.nombre %></h1>
@@ -15,7 +15,8 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
 <div class="card mb-4 text-sm bg-teal-50 border border-teal-200">
     Las <strong>horas totales</strong> y <strong>dias trabajados</strong> se precargaron desde el modulo de Horarios.
     <strong>IHSS y RAP</strong> vienen con un valor sugerido (estimado por porcentaje) — verificalos y corrigelos contra la tabla oficial vigente del IHSS/RAP antes de guardar.
-    El <strong>Salario Diario</strong><% if (etiquetaSalarioPeriodo) { %> y el <strong><%= etiquetaSalarioPeriodo %></strong><% } %>, junto con <strong>Horas Extras</strong>, <strong>Total Deducciones</strong> y <strong>Total a Pagar</strong>, se calculan automaticamente mientras escribes.
+    <strong>Transporte</strong> se paga L.100 por cada dia que el empleado salio a las 11:00pm, mas L.50 por cada dia de doble turno hasta las 9:00pm — solo captura cuantos dias de cada tipo tuvo.
+    El <strong>Salario Diario</strong><% if (etiquetaSalarioPeriodo) { %> y el <strong><%= etiquetaSalarioPeriodo %></strong><% } %>, junto con <strong>Horas Extras</strong>, <strong>Transporte</strong>, <strong>Total Deducciones</strong> y <strong>Total a Pagar</strong>, se calculan automaticamente mientras escribes.
 </div>
 
 <form method="POST" action="/planillas/<%= planilla.id %>/procesar">
@@ -25,7 +26,9 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
         data-recargo25="<%= cfg.recargo_25 %>"
         data-recargo50="<%= cfg.recargo_50 %>"
         data-recargo75="<%= cfg.recargo_75 %>"
-        data-recargo100="<%= cfg.recargo_100 %>">
+        data-recargo100="<%= cfg.recargo_100 %>"
+        data-transporte11pm="100"
+        data-transportedobleturno="50">
         <thead>
             <tr>
                 <th>Empleado</th>
@@ -42,11 +45,15 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
                 <th>HE 75%<br><span class="font-normal">6pm-6am</span></th>
                 <th>HE 100%<br><span class="font-normal">Feriado</span></th>
                 <th>Horas Extras<br><span class="font-normal">Total en L.</span></th>
+                <th>Dias Salida 11pm<br><span class="font-normal">L.100 c/u</span></th>
+                <th>Dias Doble Turno<br><span class="font-normal">hasta 9pm, L.50 c/u</span></th>
+                <th>Transporte<br><span class="font-normal">Total en L.</span></th>
                 <th>IHSS</th>
                 <th>RAP</th>
                 <th>Prestamos</th>
                 <th>Vales</th>
                 <th>Imp. Vecinal</th>
+                <th>ISR</th>
                 <th>Total Deducciones</th>
                 <th>Total a Pagar</th>
             </tr>
@@ -78,12 +85,15 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
                 <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_75[emp_<%= id %>]" value="0"></td>
                 <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_100[emp_<%= id %>]" value="0"></td>
                 <td class="font-semibold text-[#D97A2C] whitespace-nowrap salida-horas-extras">L. 0.00</td>
+                <td><input class="input campo-calculo w-20" type="number" step="1" min="0" name="transporte_dias_11pm[emp_<%= id %>]" value="<%= d ? d.transporte_dias_11pm : 0 %>"></td>
+                <td><input class="input campo-calculo w-20" type="number" step="1" min="0" name="transporte_dias_doble_turno[emp_<%= id %>]" value="<%= d ? d.transporte_dias_doble_turno : 0 %>"></td>
+                <td class="font-semibold text-[#D97A2C] whitespace-nowrap salida-transporte">L. 0.00</td>
                 <td><input class="input campo-calculo campo-ihss w-24" type="number" step="0.01" name="ihss[emp_<%= id %>]" value="<%= f.ihssSugerido.toFixed(2) %>"></td>
                 <td><input class="input campo-calculo campo-rap w-24" type="number" step="0.01" name="rap[emp_<%= id %>]" value="<%= f.rapSugerido.toFixed(2) %>"></td>
                 <td><input class="input campo-calculo w-24" type="number" step="0.01" name="prestamos[emp_<%= id %>]" value="<%= d ? d.prestamos : 0 %>"></td>
                 <td><input class="input campo-calculo w-24" type="number" step="0.01" name="vales[emp_<%= id %>]" value="<%= d ? d.vales : 0 %>"></td>
                 <td><input class="input campo-calculo w-24" type="number" step="0.01" name="impuesto_vecinal[emp_<%= id %>]" value="<%= d ? d.impuesto_vecinal : 0 %>"></td>
-                <td><input type="hidden" name="isr[emp_<%= id %>]" value="0"></td>
+                <td><input class="input campo-calculo w-24" type="number" step="0.01" name="isr[emp_<%= id %>]" value="<%= d ? d.isr : 0 %>"></td>
                 <td class="font-semibold text-red-600 whitespace-nowrap salida-total-deducciones">L. 0.00</td>
                 <td class="font-bold text-[#0D9488] whitespace-nowrap salida-total-pagar">L. 0.00</td>
             </tr>
@@ -113,7 +123,8 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
 <p class="text-xs text-slate-500 mt-3">
     Nota: el sistema clasifica las horas extra segun la franja que indiques (2pm-7pm = 25%, 7pm-9pm = 50%, 6pm-6am = 75%, feriado/descanso = 100%),
     igual que la hoja de calculo de referencia. El IHSS y RAP sugeridos usan el porcentaje configurado en <a href="/configuracion" class="text-[#0D9488] underline">Configuracion</a> como punto de partida,
-    pero son <strong>editables</strong> — corrigelos con el valor exacto de la tabla oficial vigente antes de guardar. Las columnas de Total (incluyendo Salario<% if (etiquetaSalarioPeriodo) { %> y <%= etiquetaSalarioPeriodo %><% } %>) son un estimado en vivo; el valor final oficial se recalcula al guardar.
+    pero son <strong>editables</strong> — corrigelos con el valor exacto de la tabla oficial vigente antes de guardar. Transporte se SUMA al total a pagar (no es una deduccion).
+    Las columnas de Total (incluyendo Salario<% if (etiquetaSalarioPeriodo) { %> y <%= etiquetaSalarioPeriodo %><% } %>) son un estimado en vivo; el valor final oficial se recalcula al guardar.
 </p>
 
 <script>
@@ -128,6 +139,8 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
         75: Number(tabla.dataset.recargo75) || 1.75,
         100: Number(tabla.dataset.recargo100) || 2.00
     };
+    const tarifaTransporte11pm = Number(tabla.dataset.transporte11pm) || 100;
+    const tarifaTransporteDobleTurno = Number(tabla.dataset.transportedobleturno) || 50;
 
     function num(el) {
         if (!el) return 0;
@@ -151,14 +164,19 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
         const b50 = num(tr.querySelector('[name^="bucket_50"]'));
         const b75 = num(tr.querySelector('[name^="bucket_75"]'));
         const b100 = num(tr.querySelector('[name^="bucket_100"]'));
+        const diasTransporte11pm = num(tr.querySelector('[name^="transporte_dias_11pm"]'));
+        const diasTransporteDobleTurno = num(tr.querySelector('[name^="transporte_dias_doble_turno"]'));
         const ihss = num(tr.querySelector('[name^="ihss"]'));
         const rap = num(tr.querySelector('[name^="rap"]'));
         const prestamos = num(tr.querySelector('[name^="prestamos"]'));
         const vales = num(tr.querySelector('[name^="vales"]'));
         const impVecinal = num(tr.querySelector('[name^="impuesto_vecinal"]'));
+        const isr = num(tr.querySelector('[name^="isr"]'));
 
         const pagoExtras = (b25 * salarioHora * recargos[25]) + (b50 * salarioHora * recargos[50]) +
                             (b75 * salarioHora * recargos[75]) + (b100 * salarioHora * recargos[100]);
+
+        const transporte = (diasTransporte11pm * tarifaTransporte11pm) + (diasTransporteDobleTurno * tarifaTransporteDobleTurno);
 
         // Salario del periodo = salario diario * dias trabajados (esto es
         // lo que se muestra en la columna "Salario Semanal"/"Salario
@@ -167,13 +185,15 @@ const totalColumnas = 18 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colsp
         const septimoDiaPago = septimoProcede * salarioDiario;
         const salMasHE = salarioPeriodo + septimoDiaPago + pagoExtras;
 
-        const totalDeducciones = ihss + rap + prestamos + vales + impVecinal;
-        const totalPagar = salMasHE - totalDeducciones;
+        const totalDeducciones = ihss + rap + prestamos + vales + impVecinal + isr;
+        // Transporte se SUMA (es un beneficio), no se resta como las deducciones.
+        const totalPagar = salMasHE - totalDeducciones + transporte;
 
         const celdaSalarioPeriodo = tr.querySelector('.salida-salario-periodo');
         if (celdaSalarioPeriodo) celdaSalarioPeriodo.textContent = formatoL(salarioPeriodo);
 
         tr.querySelector('.salida-horas-extras').textContent = formatoL(pagoExtras);
+        tr.querySelector('.salida-transporte').textContent = formatoL(transporte);
         tr.querySelector('.salida-total-deducciones').textContent = formatoL(totalDeducciones);
         tr.querySelector('.salida-total-pagar').textContent = formatoL(totalPagar);
 
