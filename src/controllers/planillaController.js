@@ -116,22 +116,6 @@ const PlanillaController = {
                     isr: fila.isr
                 });
 
-                PlanillaModel.upsertHorasExtraSemana(empleado.id, planilla.fecha_inicio, planilla.fecha_fin, empleado.tipo_jornada, {
-                    horas_totales: fila.horas_totales,
-                    horas_ordinarias: extras.horasOrdinarias,
-                    horas_extras_total: extras.horasExtraTotal,
-                    horas_bucket_25: extras.horas.h25,
-                    horas_bucket_50: extras.horas.h50,
-                    horas_bucket_75: extras.horas.h75,
-                    horas_bucket_100: extras.horas.h100,
-                    pago_bucket_25: extras.pagos.pago25,
-                    pago_bucket_50: extras.pagos.pago50,
-                    pago_bucket_75: extras.pagos.pago75,
-                    pago_bucket_100: extras.pagos.pago100,
-                    pago_total_extras: extras.pagoTotalExtras,
-                    septimo_dia_procede: fila.septimo_dia_procede ? 1 : 0
-                });
-
                 PlanillaModel.upsertDetalle(planillaId, empleado.id, {
                     salario_mensual: empleado.salario_base,
                     salario_diario: calc.salarioDiario,
@@ -177,13 +161,13 @@ const PlanillaController = {
         const detalle = PlanillaModel.detalle(planilla.id);
         const cfg = getConfig();
 
+        res.locals.layout = false; // el reporte tiene su propio HTML/layout de impresion
         res.render('planillas/reporte', {
             title: `Reporte - ${planilla.nombre}`,
             planilla,
             detalle,
             cfg,
-            formato: req.query.formato || 'carta', // carta | ticket
-            layout: false
+            formato: req.query.formato || 'carta' // carta | ticket
         });
     },
 

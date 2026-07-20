@@ -94,50 +94,6 @@ const PlanillaModel = {
         return db.prepare('SELECT * FROM planilla_detalle WHERE planilla_id = ? AND empleado_id = ?').get(planillaId, empleadoId);
     },
 
-    // Guarda el desglose de horas extra por franja horaria (25/50/75/100%)
-    // de la semana que cubre la planilla. Separado de planilla_detalle
-    // porque una planilla quincenal/mensual puede llegar a cubrir mas de
-    // una semana calendario en el futuro; por ahora se guarda una fila
-    // por planilla+empleado usando el rango completo de la planilla.
-    upsertHorasExtraSemana(empleadoId, semanaInicio, semanaFin, tipoJornada, extras) {
-        db.prepare(`
-            INSERT INTO horas_extras_semanal (
-                empleado_id, semana_inicio, semana_fin, horas_totales, tipo_jornada,
-                horas_ordinarias, horas_extras_total,
-                horas_bucket_25, horas_bucket_50, horas_bucket_75, horas_bucket_100,
-                pago_bucket_25, pago_bucket_50, pago_bucket_75, pago_bucket_100,
-                pago_total_extras, septimo_dia_procede
-            ) VALUES (
-                @empleado_id, @semana_inicio, @semana_fin, @horas_totales, @tipo_jornada,
-                @horas_ordinarias, @horas_extras_total,
-                @horas_bucket_25, @horas_bucket_50, @horas_bucket_75, @horas_bucket_100,
-                @pago_bucket_25, @pago_bucket_50, @pago_bucket_75, @pago_bucket_100,
-                @pago_total_extras, @septimo_dia_procede
-            )
-            ON CONFLICT(empleado_id, semana_inicio, semana_fin) DO UPDATE SET
-                horas_totales = excluded.horas_totales,
-                tipo_jornada = excluded.tipo_jornada,
-                horas_ordinarias = excluded.horas_ordinarias,
-                horas_extras_total = excluded.horas_extras_total,
-                horas_bucket_25 = excluded.horas_bucket_25,
-                horas_bucket_50 = excluded.horas_bucket_50,
-                horas_bucket_75 = excluded.horas_bucket_75,
-                horas_bucket_100 = excluded.horas_bucket_100,
-                pago_bucket_25 = excluded.pago_bucket_25,
-                pago_bucket_50 = excluded.pago_bucket_50,
-                pago_bucket_75 = excluded.pago_bucket_75,
-                pago_bucket_100 = excluded.pago_bucket_100,
-                pago_total_extras = excluded.pago_total_extras,
-                septimo_dia_procede = excluded.septimo_dia_procede
-        `).run({
-            empleado_id: empleadoId,
-            semana_inicio: semanaInicio,
-            semana_fin: semanaFin,
-            tipo_jornada: tipoJornada,
-            ...extras
-        });
-    },
-
     eliminarDetalle(planillaId, empleadoId) {
         db.prepare('DELETE FROM planilla_detalle WHERE planilla_id = ? AND empleado_id = ?').run(planillaId, empleadoId);
     },

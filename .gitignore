@@ -4,7 +4,6 @@ data/
 *.db-journal
 *.db-wal
 *.db-shm
-sessions.db
 .env
 server.log
 server.pid
