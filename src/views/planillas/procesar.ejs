@@ -1,3 +1,12 @@
+<%
+// La columna de "Salario Semanal"/"Salario Quincenal" solo aplica a esos
+// dos tipos de periodo (para Mensual no tiene sentido mostrarla aparte,
+// ya que el Salario Mensual es el propio salario base del empleado).
+const etiquetaSalarioPeriodo = planilla.tipo_periodo === 'QUINCENAL' ? 'Salario Quincenal'
+    : planilla.tipo_periodo === 'SEMANAL' ? 'Salario Semanal'
+    : null;
+const totalColumnas = 17 + (etiquetaSalarioPeriodo ? 1 : 0); // usado para colspans dinamicos
+%>
 <div class="mb-5">
     <h1 class="text-2xl font-bold text-[#1B2A4A]"><%= planilla.nombre %></h1>
     <p class="text-sm text-slate-600"><%= planilla.tipo_periodo %> · <%= planilla.fecha_inicio %> al <%= planilla.fecha_fin %> · <%= planilla.empresa || 'Sin empresa asignada' %></p>
@@ -5,59 +14,91 @@
 
 <div class="card mb-4 text-sm bg-teal-50 border border-teal-200">
     Las <strong>horas totales</strong> y <strong>dias trabajados</strong> se precargaron desde el modulo de Horarios.
-    Ajusta lo necesario, clasifica las horas extra por franja horaria y captura las deducciones antes de guardar.
+    <strong>IHSS y RAP</strong> vienen con un valor sugerido (estimado por porcentaje) — verificalos y corrigelos contra la tabla oficial vigente del IHSS/RAP antes de guardar.
+    El <strong>Salario Diario</strong><% if (etiquetaSalarioPeriodo) { %> y el <strong><%= etiquetaSalarioPeriodo %></strong><% } %>, junto con <strong>Total Deducciones</strong> y <strong>Total a Pagar</strong>, se calculan automaticamente mientras escribes.
 </div>
 
 <form method="POST" action="/planillas/<%= planilla.id %>/procesar">
 <div class="card table-scroll">
-    <table class="table-nomina" id="tablaProcesar">
+    <table class="table-nomina" id="tablaProcesar"
+        data-dias-mes="<%= cfg.dias_mes_planilla %>"
+        data-recargo25="<%= cfg.recargo_25 %>"
+        data-recargo50="<%= cfg.recargo_50 %>"
+        data-recargo75="<%= cfg.recargo_75 %>"
+        data-recargo100="<%= cfg.recargo_100 %>">
         <thead>
             <tr>
                 <th>Empleado</th>
                 <th>Salario Mensual</th>
+                <th>Salario Diario</th>
                 <th>Horas Totales</th>
                 <th>Dias Trab.</th>
+                <% if (etiquetaSalarioPeriodo) { %>
+                    <th><%= etiquetaSalarioPeriodo %></th>
+                <% } %>
                 <th>7mo Dia</th>
                 <th>HE 25%<br><span class="font-normal">2pm-7pm</span></th>
                 <th>HE 50%<br><span class="font-normal">7pm-9pm</span></th>
                 <th>HE 75%<br><span class="font-normal">6pm-6am</span></th>
                 <th>HE 100%<br><span class="font-normal">Feriado</span></th>
+                <th>IHSS</th>
+                <th>RAP</th>
                 <th>Prestamos</th>
                 <th>Vales</th>
                 <th>Imp. Vecinal</th>
+                <th>Total Deducciones</th>
+                <th>Total a Pagar</th>
             </tr>
         </thead>
         <tbody>
         <% filas.forEach(f => {
             const d = f.detalleExistente;
+            const salarioDiario = f.empleado.salario_base / cfg.dias_mes_planilla;
         %>
             <% const id = f.empleado.id; %>
-            <tr>
+            <tr class="fila-empleado" data-salario="<%= f.empleado.salario_base %>">
                 <td class="font-medium whitespace-nowrap">
                     <%= f.empleado.nombre_completo %>
                     <br><span class="text-xs text-slate-500"><%= f.empleado.tipo_jornada %> (<%= f.horasOrdinarias %> h ordinarias)</span>
                     <input type="hidden" name="empleado_ids[]" value="<%= id %>">
                 </td>
                 <td>L. <%= Number(f.empleado.salario_base).toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
-                <td><input class="input" type="number" step="0.01" name="horas_totales[emp_<%= id %>]" value="<%= f.horasTotales %>"></td>
-                <td><input class="input w-20" type="number" step="0.5" name="dias_trabajados[emp_<%= id %>]" value="<%= d ? d.dias_trabajados : f.diasTrabajados %>"></td>
+                <td class="text-slate-600">L. <%= salarioDiario.toLocaleString('es-HN', {minimumFractionDigits:2}) %></td>
+                <td><input class="input campo-calculo" type="number" step="0.01" name="horas_totales[emp_<%= id %>]" value="<%= f.horasTotales %>"></td>
+                <td><input class="input campo-calculo w-20" type="number" step="0.5" name="dias_trabajados[emp_<%= id %>]" value="<%= d ? d.dias_trabajados : f.diasTrabajados %>"></td>
+                <% if (etiquetaSalarioPeriodo) { %>
+                    <td class="font-semibold text-[#1B2A4A] whitespace-nowrap salida-salario-periodo">L. 0.00</td>
+                <% } %>
                 <td class="text-center">
-                    <input type="checkbox" name="septimo_dia_procede[emp_<%= id %>]" value="1" <%= (d ? d.septimo_dia_procede : 1) ? 'checked' : '' %>>
+                    <input class="campo-calculo" type="checkbox" name="septimo_dia_procede[emp_<%= id %>]" value="1" <%= (d ? d.septimo_dia_procede : 1) ? 'checked' : '' %>>
                 </td>
-                <td><input class="input w-20" type="number" step="0.01" name="bucket_25[emp_<%= id %>]" value="0"></td>
-                <td><input class="input w-20" type="number" step="0.01" name="bucket_50[emp_<%= id %>]" value="0"></td>
-                <td><input class="input w-20" type="number" step="0.01" name="bucket_75[emp_<%= id %>]" value="0"></td>
-                <td><input class="input w-20" type="number" step="0.01" name="bucket_100[emp_<%= id %>]" value="0"></td>
-                <td><input class="input w-24" type="number" step="0.01" name="prestamos[emp_<%= id %>]" value="<%= d ? d.prestamos : 0 %>"></td>
-                <td><input class="input w-24" type="number" step="0.01" name="vales[emp_<%= id %>]" value="<%= d ? d.vales : 0 %>"></td>
-                <td><input class="input w-24" type="number" step="0.01" name="impuesto_vecinal[emp_<%= id %>]" value="<%= d ? d.impuesto_vecinal : 0 %>"></td>
+                <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_25[emp_<%= id %>]" value="0"></td>
+                <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_50[emp_<%= id %>]" value="0"></td>
+                <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_75[emp_<%= id %>]" value="0"></td>
+                <td><input class="input campo-calculo w-20" type="number" step="0.01" name="bucket_100[emp_<%= id %>]" value="0"></td>
+                <td><input class="input campo-calculo campo-ihss w-24" type="number" step="0.01" name="ihss[emp_<%= id %>]" value="<%= f.ihssSugerido.toFixed(2) %>"></td>
+                <td><input class="input campo-calculo campo-rap w-24" type="number" step="0.01" name="rap[emp_<%= id %>]" value="<%= f.rapSugerido.toFixed(2) %>"></td>
+                <td><input class="input campo-calculo w-24" type="number" step="0.01" name="prestamos[emp_<%= id %>]" value="<%= d ? d.prestamos : 0 %>"></td>
+                <td><input class="input campo-calculo w-24" type="number" step="0.01" name="vales[emp_<%= id %>]" value="<%= d ? d.vales : 0 %>"></td>
+                <td><input class="input campo-calculo w-24" type="number" step="0.01" name="impuesto_vecinal[emp_<%= id %>]" value="<%= d ? d.impuesto_vecinal : 0 %>"></td>
                 <td><input type="hidden" name="isr[emp_<%= id %>]" value="0"></td>
+                <td class="font-semibold text-red-600 whitespace-nowrap salida-total-deducciones">L. 0.00</td>
+                <td class="font-bold text-[#0D9488] whitespace-nowrap salida-total-pagar">L. 0.00</td>
             </tr>
         <% }) %>
         <% if (filas.length === 0) { %>
-            <tr><td colspan="12" class="text-center text-slate-500 py-6">No hay empleados activos para procesar.</td></tr>
+            <tr><td colspan="<%= totalColumnas %>" class="text-center text-slate-500 py-6">No hay empleados activos para procesar.</td></tr>
         <% } %>
         </tbody>
+        <% if (filas.length > 0) { %>
+        <tfoot>
+            <tr class="font-bold bg-slate-50">
+                <td colspan="<%= totalColumnas - 2 %>">TOTALES (estimado en vivo)</td>
+                <td class="text-red-600" id="granTotalDeducciones">L. 0.00</td>
+                <td class="text-[#0D9488]" id="granTotalPagar">L. 0.00</td>
+            </tr>
+        </tfoot>
+        <% } %>
     </table>
 </div>
 
@@ -69,5 +110,88 @@
 
 <p class="text-xs text-slate-500 mt-3">
     Nota: el sistema clasifica las horas extra segun la franja que indiques (2pm-7pm = 25%, 7pm-9pm = 50%, 6pm-6am = 75%, feriado/descanso = 100%),
-    igual que la hoja de calculo de referencia. IHSS y RAP se calculan con el porcentaje y techo definidos en <a href="/configuracion" class="text-[#0D9488] underline">Configuracion</a> — verifica que esten actualizados.
+    igual que la hoja de calculo de referencia. El IHSS y RAP sugeridos usan el porcentaje configurado en <a href="/configuracion" class="text-[#0D9488] underline">Configuracion</a> como punto de partida,
+    pero son <strong>editables</strong> — corrigelos con el valor exacto de la tabla oficial vigente antes de guardar. Las columnas de Total (incluyendo Salario<% if (etiquetaSalarioPeriodo) { %> y <%= etiquetaSalarioPeriodo %><% } %>) son un estimado en vivo; el valor final oficial se recalcula al guardar.
 </p>
+
+<script>
+(function () {
+    const tabla = document.getElementById('tablaProcesar');
+    if (!tabla) return;
+
+    const diasMes = Number(tabla.dataset.diasMes) || 30;
+    const recargos = {
+        25: Number(tabla.dataset.recargo25) || 1.25,
+        50: Number(tabla.dataset.recargo50) || 1.50,
+        75: Number(tabla.dataset.recargo75) || 1.75,
+        100: Number(tabla.dataset.recargo100) || 2.00
+    };
+
+    function num(el) {
+        if (!el) return 0;
+        if (el.type === 'checkbox') return el.checked ? 1 : 0;
+        const v = parseFloat(el.value);
+        return isNaN(v) ? 0 : v;
+    }
+
+    function formatoL(n) {
+        return 'L. ' + n.toLocaleString('es-HN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calcularFila(tr) {
+        const salarioMensual = Number(tr.dataset.salario) || 0;
+        const salarioDiario = salarioMensual / diasMes;
+        const salarioHora = salarioDiario / 8;
+
+        const diasTrabajados = num(tr.querySelector('[name^="dias_trabajados"]'));
+        const septimoProcede = num(tr.querySelector('[name^="septimo_dia_procede"]'));
+        const b25 = num(tr.querySelector('[name^="bucket_25"]'));
+        const b50 = num(tr.querySelector('[name^="bucket_50"]'));
+        const b75 = num(tr.querySelector('[name^="bucket_75"]'));
+        const b100 = num(tr.querySelector('[name^="bucket_100"]'));
+        const ihss = num(tr.querySelector('[name^="ihss"]'));
+        const rap = num(tr.querySelector('[name^="rap"]'));
+        const prestamos = num(tr.querySelector('[name^="prestamos"]'));
+        const vales = num(tr.querySelector('[name^="vales"]'));
+        const impVecinal = num(tr.querySelector('[name^="impuesto_vecinal"]'));
+
+        const pagoExtras = (b25 * salarioHora * recargos[25]) + (b50 * salarioHora * recargos[50]) +
+                            (b75 * salarioHora * recargos[75]) + (b100 * salarioHora * recargos[100]);
+
+        // Salario del periodo = salario diario * dias trabajados (esto es
+        // lo que se muestra en la columna "Salario Semanal"/"Salario
+        // Quincenal" cuando aplica).
+        const salarioPeriodo = diasTrabajados * salarioDiario;
+        const septimoDiaPago = septimoProcede * salarioDiario;
+        const salMasHE = salarioPeriodo + septimoDiaPago + pagoExtras;
+
+        const totalDeducciones = ihss + rap + prestamos + vales + impVecinal;
+        const totalPagar = salMasHE - totalDeducciones;
+
+        const celdaSalarioPeriodo = tr.querySelector('.salida-salario-periodo');
+        if (celdaSalarioPeriodo) celdaSalarioPeriodo.textContent = formatoL(salarioPeriodo);
+
+        tr.querySelector('.salida-total-deducciones').textContent = formatoL(totalDeducciones);
+        tr.querySelector('.salida-total-pagar').textContent = formatoL(totalPagar);
+
+        return { totalDeducciones, totalPagar };
+    }
+
+    function recalcularTodo() {
+        let sumaDeducciones = 0, sumaPagar = 0;
+        document.querySelectorAll('.fila-empleado').forEach(tr => {
+            const r = calcularFila(tr);
+            sumaDeducciones += r.totalDeducciones;
+            sumaPagar += r.totalPagar;
+        });
+        const gd = document.getElementById('granTotalDeducciones');
+        const gp = document.getElementById('granTotalPagar');
+        if (gd) gd.textContent = formatoL(sumaDeducciones);
+        if (gp) gp.textContent = formatoL(sumaPagar);
+    }
+
+    tabla.addEventListener('input', recalcularTodo);
+    tabla.addEventListener('change', recalcularTodo);
+    recalcularTodo();
+})();
+</script>
