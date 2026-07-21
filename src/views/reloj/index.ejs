@@ -44,7 +44,8 @@
             <button type="button" class="tarjeta-empleado boton-empleado"
                 data-id="<%= e.id %>" data-nombre="<%= e.nombre_completo %>"
                 data-entrada="<%= e.yaMarcoEntrada ? '1' : '0' %>" data-hora-entrada="<%= e.horaEntrada || '' %>"
-                data-salida="<%= e.yaMarcoSalida ? '1' : '0' %>" data-hora-salida="<%= e.horaSalida || '' %>">
+                data-salida="<%= e.yaMarcoSalida ? '1' : '0' %>" data-hora-salida="<%= e.horaSalida || '' %>"
+                data-turno-inicio="<%= e.turnoInicio || '' %>" data-turno-fin="<%= e.turnoFin || '' %>">
                 <span class="font-semibold text-[#1B2A4A]"><%= e.nombre_completo %></span>
                 <% if (e.yaMarcoSalida) { %>
                     <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500">Turno completo</span>
@@ -73,6 +74,16 @@
                 <button type="button" id="btnSalida" class="btn-marcar btn-salida">🏁 Marcar Salida</button>
             </div>
         </div>
+
+        <div class="bg-white rounded-2xl p-5 mb-4">
+            <p class="text-sm font-semibold text-[#1B2A4A] mb-1">¿Cual es tu turno hoy?</p>
+            <p id="turnoActualTexto" class="text-xs text-slate-500 mb-3">Aun no has elegido turno hoy.</p>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" class="btn-turno-reloj text-xs px-2 py-3 rounded-lg border-2 border-slate-200 hover:border-[#0D9488]" data-inicio="06:00" data-fin="14:00">🌅<br>6am-2pm</button>
+                <button type="button" class="btn-turno-reloj text-xs px-2 py-3 rounded-lg border-2 border-slate-200 hover:border-[#0D9488]" data-inicio="14:00" data-fin="21:00">☀️<br>2pm-9pm</button>
+                <button type="button" class="btn-turno-reloj text-xs px-2 py-3 rounded-lg border-2 border-slate-200 hover:border-[#0D9488]" data-inicio="21:00" data-fin="06:00">🌙<br>9pm-6am</button>
+            </div>
+        </div>
         <p id="mensajeResultado" class="text-center text-sm font-medium"></p>
     </div>
 </div>
@@ -98,7 +109,9 @@ document.querySelectorAll('.boton-empleado').forEach(btn => {
             entrada: btn.dataset.entrada === '1',
             horaEntrada: btn.dataset.horaEntrada,
             salida: btn.dataset.salida === '1',
-            horaSalida: btn.dataset.horaSalida
+            horaSalida: btn.dataset.horaSalida,
+            turnoInicio: btn.dataset.turnoInicio,
+            turnoFin: btn.dataset.turnoFin
         };
         mostrarPantallaMarcaje();
     });
@@ -109,6 +122,7 @@ function mostrarPantallaMarcaje() {
     document.getElementById('pantallaMarcaje').classList.remove('hidden');
     document.getElementById('nombreSeleccionado').textContent = empleadoActual.nombre;
     document.getElementById('mensajeResultado').textContent = '';
+    actualizarTextoTurno();
 
     const btnEntrada = document.getElementById('btnEntrada');
     const btnSalida = document.getElementById('btnSalida');
@@ -128,6 +142,39 @@ function mostrarPantallaMarcaje() {
         btnSalida.disabled = true;
     }
 }
+
+function actualizarTextoTurno() {
+    const texto = document.getElementById('turnoActualTexto');
+    if (empleadoActual.turnoInicio && empleadoActual.turnoFin) {
+        texto.textContent = `Turno elegido hoy: ${empleadoActual.turnoInicio} a ${empleadoActual.turnoFin}. Puedes cambiarlo tocando otro.`;
+    } else {
+        texto.textContent = 'Aun no has elegido turno hoy.';
+    }
+}
+
+document.querySelectorAll('.btn-turno-reloj').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const inicio = btn.dataset.inicio;
+        const fin = btn.dataset.fin;
+        document.querySelectorAll('.btn-turno-reloj').forEach(b => b.classList.remove('border-[#0D9488]', 'bg-teal-50'));
+        btn.classList.add('border-[#0D9488]', 'bg-teal-50');
+        try {
+            const resp = await fetch('/reloj/turno', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ empleado_id: empleadoActual.id, inicio, fin })
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                empleadoActual.turnoInicio = inicio;
+                empleadoActual.turnoFin = fin;
+                actualizarTextoTurno();
+            }
+        } catch (err) {
+            document.getElementById('turnoActualTexto').textContent = 'No se pudo guardar el turno, intenta de nuevo.';
+        }
+    });
+});
 
 document.getElementById('btnVolver').addEventListener('click', () => {
     location.reload();
