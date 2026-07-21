@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es-HN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Reloj de Asistencia | NominaCore HN</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/estilos.css">
+<style>
+    body { background: #1B2A4A; min-height: 100vh; }
+    .reloj-hora { font-variant-numeric: tabular-nums; }
+    .tarjeta-empleado {
+        background: #fff; border-radius: 1rem; padding: 1.1rem 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.15); text-align: left;
+        width: 100%; display: flex; align-items: center; justify-content: space-between;
+        gap: .75rem; transition: transform .1s ease;
+    }
+    .tarjeta-empleado:active { transform: scale(0.98); }
+    .btn-marcar {
+        display: block; width: 100%; padding: 1.1rem; border-radius: .9rem;
+        font-weight: 800; font-size: 1.15rem; color: #fff; text-align: center;
+        transition: filter .1s ease;
+    }
+    .btn-marcar:active { filter: brightness(0.9); }
+    .btn-entrada { background: linear-gradient(135deg, #0D9488, #0b7a70); }
+    .btn-salida { background: linear-gradient(135deg, #D97A2C, #b8621f); }
+    .btn-marcar:disabled { background: #cbd5e1; color: #64748b; }
+</style>
+</head>
+<body class="px-4 py-6">
+
+<div class="max-w-md mx-auto">
+    <div class="text-center mb-6">
+        <span class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0D9488] text-2xl mb-2">⏱️</span>
+        <h1 class="text-2xl font-bold text-white">Reloj de Asistencia</h1>
+        <p class="text-slate-300 text-sm">NominaCore HN</p>
+        <p id="relojEnVivo" class="reloj-hora text-3xl font-bold text-white mt-3">--:--:--</p>
+        <p id="fechaHoy" class="text-slate-300 text-sm"></p>
+    </div>
+
+    <!-- ============ LISTA DE EMPLEADOS ============ -->
+    <div id="listaEmpleados" class="flex flex-col gap-3">
+        <% empleados.forEach(e => { %>
+            <button type="button" class="tarjeta-empleado boton-empleado"
+                data-id="<%= e.id %>" data-nombre="<%= e.nombre_completo %>"
+                data-entrada="<%= e.yaMarcoEntrada ? '1' : '0' %>" data-hora-entrada="<%= e.horaEntrada || '' %>"
+                data-salida="<%= e.yaMarcoSalida ? '1' : '0' %>" data-hora-salida="<%= e.horaSalida || '' %>">
+                <span class="font-semibold text-[#1B2A4A]"><%= e.nombre_completo %></span>
+                <% if (e.yaMarcoSalida) { %>
+                    <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500">Turno completo</span>
+                <% } else if (e.yaMarcoEntrada) { %>
+                    <span class="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-700">Entrada: <%= e.horaEntrada %></span>
+                <% } else { %>
+                    <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">Sin marcar</span>
+                <% } %>
+            </button>
+        <% }) %>
+        <% if (empleados.length === 0) { %>
+            <p class="text-center text-slate-300 text-sm py-6">No hay empleados activos registrados.</p>
+        <% } %>
+    </div>
+
+    <!-- ============ PANTALLA DE MARCAJE (aparece al elegir un empleado) ============ -->
+    <div id="pantallaMarcaje" class="hidden">
+        <button type="button" id="btnVolver" class="text-slate-300 text-sm mb-4">&larr; Elegir otro empleado</button>
+        <div class="bg-white rounded-2xl p-6 text-center mb-4">
+            <p class="text-sm text-slate-500">Hola,</p>
+            <h2 id="nombreSeleccionado" class="text-xl font-bold text-[#1B2A4A] mb-4"></h2>
+            <p id="estadoSeleccionado" class="text-sm text-slate-600 mb-4"></p>
+
+            <div class="flex flex-col gap-3">
+                <button type="button" id="btnEntrada" class="btn-marcar btn-entrada">✅ Marcar Entrada</button>
+                <button type="button" id="btnSalida" class="btn-marcar btn-salida">🏁 Marcar Salida</button>
+            </div>
+        </div>
+        <p id="mensajeResultado" class="text-center text-sm font-medium"></p>
+    </div>
+</div>
+
+<script>
+let empleadoActual = null;
+
+// Reloj en vivo (solo visual; la hora que realmente queda guardada la
+// calcula el servidor, esto es nada mas para que el empleado la vea).
+function actualizarReloj() {
+    const ahora = new Date();
+    document.getElementById('relojEnVivo').textContent = ahora.toLocaleTimeString('es-HN', { hour12: true });
+    document.getElementById('fechaHoy').textContent = ahora.toLocaleDateString('es-HN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+
+document.querySelectorAll('.boton-empleado').forEach(btn => {
+    btn.addEventListener('click', () => {
+        empleadoActual = {
+            id: btn.dataset.id,
+            nombre: btn.dataset.nombre,
+            entrada: btn.dataset.entrada === '1',
+            horaEntrada: btn.dataset.horaEntrada,
+            salida: btn.dataset.salida === '1',
+            horaSalida: btn.dataset.horaSalida
+        };
+        mostrarPantallaMarcaje();
+    });
+});
+
+function mostrarPantallaMarcaje() {
+    document.getElementById('listaEmpleados').classList.add('hidden');
+    document.getElementById('pantallaMarcaje').classList.remove('hidden');
+    document.getElementById('nombreSeleccionado').textContent = empleadoActual.nombre;
+    document.getElementById('mensajeResultado').textContent = '';
+
+    const btnEntrada = document.getElementById('btnEntrada');
+    const btnSalida = document.getElementById('btnSalida');
+    const estado = document.getElementById('estadoSeleccionado');
+
+    if (empleadoActual.salida) {
+        estado.textContent = `Turno completo hoy: ${empleadoActual.horaEntrada} a ${empleadoActual.horaSalida}.`;
+        btnEntrada.disabled = true;
+        btnSalida.disabled = true;
+    } else if (empleadoActual.entrada) {
+        estado.textContent = `Ya marcaste entrada a las ${empleadoActual.horaEntrada}. Falta marcar salida.`;
+        btnEntrada.disabled = true;
+        btnSalida.disabled = false;
+    } else {
+        estado.textContent = 'Aun no has marcado entrada hoy.';
+        btnEntrada.disabled = false;
+        btnSalida.disabled = true;
+    }
+}
+
+document.getElementById('btnVolver').addEventListener('click', () => {
+    location.reload();
+});
+
+async function marcar(tipo) {
+    const mensaje = document.getElementById('mensajeResultado');
+    mensaje.textContent = 'Guardando...';
+    mensaje.className = 'text-center text-sm font-medium text-slate-500';
+    try {
+        const resp = await fetch('/reloj/marcar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ empleado_id: empleadoActual.id, tipo })
+        });
+        const data = await resp.json();
+        mensaje.textContent = data.mensaje;
+        mensaje.className = 'text-center text-sm font-medium ' + (data.ok ? 'text-emerald-300' : 'text-amber-300');
+        if (data.ok) {
+            setTimeout(() => location.reload(), 1500);
+        }
+    } catch (err) {
+        mensaje.textContent = 'No se pudo conectar. Intenta de nuevo.';
+        mensaje.className = 'text-center text-sm font-medium text-red-300';
+    }
+}
+
+document.getElementById('btnEntrada').addEventListener('click', () => marcar('entrada'));
+document.getElementById('btnSalida').addEventListener('click', () => marcar('salida'));
+</script>
+</body>
+</html>
