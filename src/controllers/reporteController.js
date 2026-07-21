@@ -123,6 +123,96 @@ const ReporteController = {
     },
 
     // =================================================================
+    // 2b. ASIENTO CONTABLE (partida doble: Codigo | Cuenta | Debe | Haber)
+    // Reutiliza la misma consulta de "contable" pero arma las lineas en
+    // formato de asiento listo para trasladar al sistema contable.
+    // =================================================================
+    asiento(req, res) {
+        const def = rangoPorDefecto();
+        const f = {
+            fecha_inicio: req.query.fecha_inicio || def.inicio,
+            fecha_fin: req.query.fecha_fin || def.fin,
+            empresa: req.query.empresa || ''
+        };
+
+        const cfgCuentas = db.prepare('SELECT * FROM configuracion WHERE id = 1').get();
+
+        const { where, params } = construirFiltros([
+            ['p.fecha_inicio >= ?', f.fecha_inicio],
+            ['p.fecha_fin <= ?', f.fecha_fin],
+            ['p.empresa = ?', f.empresa]
+        ]);
+
+        const detalle = db.prepare(`
+            SELECT pd.*, e.nombre_completo, e.cuenta_contable, e.codigo_contable, p.nombre AS planilla_nombre, p.empresa
+            FROM planilla_detalle pd
+            JOIN planillas p ON p.id = pd.planilla_id
+            JOIN empleados e ON e.id = pd.empleado_id
+            ${where}
+            ORDER BY p.fecha_inicio, e.nombre_completo
+        `).all(...params);
+
+        const planillasIncluidas = db.prepare(`
+            SELECT DISTINCT p.id, p.nombre, p.fecha_inicio, p.fecha_fin
+            FROM planillas p
+            WHERE p.fecha_inicio >= ? AND p.fecha_fin <= ? AND (p.empresa = ? OR ? = '')
+            ORDER BY p.fecha_inicio
+        `).all(f.fecha_inicio, f.fecha_fin, f.empresa, f.empresa);
+
+        const totSalOrd = sumarCampo(detalle, 'salario_ordinario') + sumarCampo(detalle, 'septimo_dia_pago');
+        const totSalExtra = sumarCampo(detalle, 'horas_extras_pago');
+        const totTransporte = sumarCampo(detalle, 'transporte');
+        const totIhss = sumarCampo(detalle, 'ihss');
+        const totRap = sumarCampo(detalle, 'rap');
+        const totImpVecinal = sumarCampo(detalle, 'impuesto_vecinal');
+        const totIsr = sumarCampo(detalle, 'isr');
+        const totBanco = sumarCampo(detalle, 'total_pagar');
+
+        // Construir las lineas del asiento (partida doble): cada linea es
+        // { codigo, cuenta, debe, haber }. El Debe y el Haber deben cuadrar.
+        const lineas = [];
+        if (totSalOrd > 0) lineas.push({ codigo: cfgCuentas.cuenta_salario_ordinario, cuenta: 'Salario Ordinario y Septimo Dia', debe: totSalOrd, haber: 0 });
+        if (totSalExtra > 0) lineas.push({ codigo: cfgCuentas.cuenta_salario_extraordinario, cuenta: 'Salario Extraordinario (Horas Extra)', debe: totSalExtra, haber: 0 });
+        if (totTransporte > 0) lineas.push({ codigo: cfgCuentas.cuenta_transporte, cuenta: 'Transporte', debe: totTransporte, haber: 0 });
+
+        if (totIhss > 0) lineas.push({ codigo: cfgCuentas.cuenta_ihss, cuenta: 'IHSS por Pagar', debe: 0, haber: totIhss });
+        if (totRap > 0) lineas.push({ codigo: cfgCuentas.cuenta_rap, cuenta: 'RAP por Pagar', debe: 0, haber: totRap });
+        if (totImpVecinal > 0) lineas.push({ codigo: cfgCuentas.cuenta_impuesto_vecinal, cuenta: 'Impuesto Vecinal por Pagar', debe: 0, haber: totImpVecinal });
+        if (totIsr > 0) lineas.push({ codigo: cfgCuentas.cuenta_isr, cuenta: 'ISR por Pagar', debe: 0, haber: totIsr });
+
+        // Prestamos y Vales: uno por empleado, usando su propia cuenta
+        // contable (cuenta por cobrar a ese empleado especifico), igual
+        // que en la hoja de referencia del cliente.
+        detalle.forEach(d => {
+            const cuentaEmpleado = d.cuenta_contable || d.codigo_contable || `(sin cuenta) ${d.nombre_completo}`;
+            if (d.prestamos > 0) lineas.push({ codigo: cuentaEmpleado, cuenta: `Prestamo Recuperado - ${d.nombre_completo}`, debe: 0, haber: d.prestamos });
+            if (d.vales > 0) lineas.push({ codigo: cuentaEmpleado, cuenta: `Vale Recuperado - ${d.nombre_completo}`, debe: 0, haber: d.vales });
+        });
+
+        if (totBanco > 0) lineas.push({ codigo: cfgCuentas.cuenta_banco, cuenta: 'Efectivo / Banco (Neto Pagado)', debe: 0, haber: totBanco });
+
+        const totalDebe = round2(lineas.reduce((acc, l) => acc + l.debe, 0));
+        const totalHaber = round2(lineas.reduce((acc, l) => acc + l.haber, 0));
+        const cuadra = Math.abs(totalDebe - totalHaber) < 0.02; // tolerancia de 1-2 centavos por redondeo
+
+        if (req.query.export === 'xlsx') {
+            return enviarExcel(res, 'asiento-contable.xlsx', {
+                titulo: 'Asiento Contable de Nomina',
+                subtitulo: `${f.fecha_inicio} al ${f.fecha_fin}${f.empresa ? ' - ' + f.empresa : ''}`,
+                headers: ['Codigo de Cuenta', 'Cuenta', 'Debe', 'Haber'],
+                filas: lineas.map(l => [l.codigo, l.cuenta, l.debe || '', l.haber || '']),
+                totales: ['', 'TOTALES', totalDebe, totalHaber]
+            });
+        }
+
+        res.render('reportes/asiento', {
+            title: 'Asiento Contable',
+            lineas, totalDebe, totalHaber, cuadra,
+            planillasIncluidas, filtros: f, empresas: empresasDisponibles()
+        });
+    },
+
+    // =================================================================
     // 3. REPORTE DE HORAS EXTRA (desglose por franja/recargo)
     // =================================================================
     horasExtra(req, res) {
