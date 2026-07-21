@@ -9,6 +9,7 @@ const {
     calcularNumSemanas,
     calcularIhssRap,
     calcularTransporte,
+    round2,
     getConfig
 } = require('../services/calculoService');
 
@@ -54,6 +55,13 @@ const PlanillaController = {
         const cfg = getConfig();
         const numSemanas = calcularNumSemanas(planilla.fecha_inicio, planilla.fecha_fin);
 
+        // Proporcion del periodo respecto a un mes completo (usa la misma
+        // base de 30 dias que ya se usa para el salario diario), para que
+        // la SUGERENCIA de IHSS/RAP no calcule sobre un mes completo
+        // cuando la planilla es Semanal o Quincenal.
+        const diasPeriodo = Math.round((new Date(planilla.fecha_fin) - new Date(planilla.fecha_inicio)) / 86400000) + 1;
+        const proporcionPeriodo = diasPeriodo / cfg.dias_mes_planilla;
+
         const filas = empleadosActivos.map(emp => {
             const horasTotales = TurnoModel.totalHorasSemana(emp.id, planilla.fecha_inicio, planilla.fecha_fin);
             const diasTrabajados = TurnoModel.diasTrabajados(emp.id, planilla.fecha_inicio, planilla.fecha_fin);
@@ -64,10 +72,16 @@ const PlanillaController = {
 
             // Sugerencia inicial de IHSS/RAP (editable): si la planilla ya
             // se proceso antes se respeta lo que el usuario ya digito; si
-            // es la primera vez, se sugiere un estimado por porcentaje
-            // configurado en Configuracion, PERO el usuario debe verificar
-            // y corregir contra la tabla oficial vigente del IHSS/RAP.
-            const sugerido = calcularIhssRap(emp.salario_base, cfg);
+            // es la primera vez, se sugiere un estimado prorrateado al
+            // tamaño real del periodo (Semanal/Quincenal/Mensual), PERO
+            // el usuario debe verificar y corregir contra la tabla
+            // oficial vigente del IHSS/RAP — esto es solo un punto de
+            // partida razonable, no el valor oficial.
+            const sugeridoMensual = calcularIhssRap(emp.salario_base, cfg);
+            const sugerido = {
+                ihss: round2(sugeridoMensual.ihss * proporcionPeriodo),
+                rap: round2(sugeridoMensual.rap * proporcionPeriodo)
+            };
 
             return {
                 empleado: emp,
