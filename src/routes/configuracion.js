@@ -18,6 +18,8 @@ router.post('/', (req, res) => {
             rap_porcentaje_empleado = ?, rap_techo_salarial = ?,
             dias_mes_planilla = ?, whatsapp_contacto = ?,
             vista_previa_impresion_default = ?,
+            cuenta_salario_ordinario = ?, cuenta_salario_extraordinario = ?, cuenta_transporte = ?,
+            cuenta_ihss = ?, cuenta_rap = ?, cuenta_impuesto_vecinal = ?, cuenta_isr = ?, cuenta_banco = ?,
             updated_at = datetime('now','localtime')
         WHERE id = 1
     `).run(
@@ -27,7 +29,9 @@ router.post('/', (req, res) => {
         Number(b.ihss_porcentaje_empleado), Number(b.ihss_techo_salarial),
         Number(b.rap_porcentaje_empleado), Number(b.rap_techo_salarial),
         Number(b.dias_mes_planilla), b.whatsapp_contacto,
-        b.vista_previa_impresion_default ? 1 : 0
+        b.vista_previa_impresion_default ? 1 : 0,
+        b.cuenta_salario_ordinario, b.cuenta_salario_extraordinario, b.cuenta_transporte,
+        b.cuenta_ihss, b.cuenta_rap, b.cuenta_impuesto_vecinal, b.cuenta_isr, b.cuenta_banco
     );
     res.redirect('/configuracion?ok=Configuracion guardada correctamente');
 });
