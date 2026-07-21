@@ -6,7 +6,9 @@ const {
     calcularHorasExtraSemana,
     calcularDetalleEmpleado,
     horasOrdinariasPorJornada,
+    calcularNumSemanas,
     calcularIhssRap,
+    calcularTransporte,
     getConfig
 } = require('../services/calculoService');
 
@@ -50,11 +52,12 @@ const PlanillaController = {
 
         const empleadosActivos = EmpleadoModel.listar({ estado: 'ACTIVO' });
         const cfg = getConfig();
+        const numSemanas = calcularNumSemanas(planilla.fecha_inicio, planilla.fecha_fin);
 
         const filas = empleadosActivos.map(emp => {
             const horasTotales = TurnoModel.totalHorasSemana(emp.id, planilla.fecha_inicio, planilla.fecha_fin);
             const diasTrabajados = TurnoModel.diasTrabajados(emp.id, planilla.fecha_inicio, planilla.fecha_fin);
-            const horasOrdinarias = horasOrdinariasPorJornada(emp.tipo_jornada, cfg);
+            const horasOrdinarias = horasOrdinariasPorJornada(emp.tipo_jornada, cfg, numSemanas);
             const horasExtra = Math.max(0, +(horasTotales - horasOrdinarias).toFixed(2));
 
             const detalleExistente = PlanillaModel.detalleEmpleado(planilla.id, emp.id);
@@ -97,6 +100,7 @@ const PlanillaController = {
         if (!planilla) return res.status(404).send('Planilla no encontrada');
 
         const filas = normalizarFilas(req.body);
+        const numSemanas = calcularNumSemanas(planilla.fecha_inicio, planilla.fecha_fin);
 
         const transaccion = db.transaction((filas) => {
             for (const fila of filas) {
@@ -107,12 +111,18 @@ const PlanillaController = {
                     salarioMensual: empleado.salario_base,
                     horasTotales: fila.horas_totales,
                     tipoJornada: empleado.tipo_jornada,
+                    numSemanas,
                     buckets: {
                         bucket_25: fila.bucket_25,
                         bucket_50: fila.bucket_50,
                         bucket_75: fila.bucket_75,
                         bucket_100: fila.bucket_100
                     }
+                });
+
+                const transporte = calcularTransporte({
+                    diasSalida11pm: fila.transporte_dias_11pm,
+                    diasDobleTurno: fila.transporte_dias_doble_turno
                 });
 
                 const calc = calcularDetalleEmpleado({
@@ -125,7 +135,8 @@ const PlanillaController = {
                     prestamos: fila.prestamos,
                     vales: fila.vales,
                     impuestoVecinal: fila.impuesto_vecinal,
-                    isr: fila.isr
+                    isr: fila.isr,
+                    transporte
                 });
 
                 PlanillaModel.upsertHorasExtraSemana(empleado.id, planilla.fecha_inicio, planilla.fecha_fin, empleado.tipo_jornada, {
@@ -162,6 +173,9 @@ const PlanillaController = {
                     vales: fila.vales,
                     impuesto_vecinal: fila.impuesto_vecinal,
                     isr: fila.isr,
+                    transporte_dias_11pm: fila.transporte_dias_11pm,
+                    transporte_dias_doble_turno: fila.transporte_dias_doble_turno,
+                    transporte: calc.transporte,
                     total_deducciones: calc.totalDeducciones,
                     total_pagar: calc.totalPagar
                 });
@@ -227,7 +241,9 @@ function normalizarFilas(body) {
         prestamos: campo(body.prestamos, id),
         vales: campo(body.vales, id),
         impuesto_vecinal: campo(body.impuesto_vecinal, id),
-        isr: campo(body.isr, id)
+        isr: campo(body.isr, id),
+        transporte_dias_11pm: campo(body.transporte_dias_11pm, id),
+        transporte_dias_doble_turno: campo(body.transporte_dias_doble_turno, id)
     }));
 }
 
