@@ -8,5 +8,6 @@ const ctrl = require('../controllers/relojController');
 // no exponen salarios, cuentas contables ni ningun otro dato sensible.
 router.get('/', ctrl.index);
 router.post('/marcar', ctrl.marcar);
+router.post('/turno', ctrl.asignarTurno);
 
 module.exports = router;
