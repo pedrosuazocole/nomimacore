@@ -143,6 +143,25 @@ const TurnoModel = {
 
         const turno = db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
         return { ok: true, mensaje: `Salida marcada a las ${hora}. Trabajaste ${horas} h hoy.`, turno };
+    },
+
+    // El empleado (o el staff) declara cual de los 3 turnos de tienda le
+    // toca HOY. Se guarda en hora_entrada_programada/hora_salida_programada
+    // (el turno "planeado"), sin tocar hora_entrada_real/hora_salida_real
+    // (que siguen siendo el marcaje honesto del reloj). Asi se puede
+    // comparar despues turno asignado vs. hora real de llegada.
+    asignarTurnoHoy(empleadoId, horaInicio, horaFin) {
+        const fecha = fechaHondurasHoy();
+        db.prepare(`
+            INSERT INTO turnos_horarios (empleado_id, fecha, hora_entrada_programada, hora_salida_programada, tipo_turno, es_dia_libre)
+            VALUES (?, ?, ?, ?, 'DIARIO', 0)
+            ON CONFLICT(empleado_id, fecha) DO UPDATE SET
+                hora_entrada_programada = excluded.hora_entrada_programada,
+                hora_salida_programada = excluded.hora_salida_programada,
+                updated_at = datetime('now','localtime')
+        `).run(empleadoId, fecha, horaInicio, horaFin);
+
+        return db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
     }
 };
 
