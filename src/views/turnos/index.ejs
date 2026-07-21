@@ -3,6 +3,8 @@
     <div class="flex flex-wrap gap-2">
         <a href="/turnos/plantilla" class="btn btn-outline">⬇ Descargar Plantilla de Horarios</a>
         <a href="/turnos/importar" class="btn btn-secondary">⬆ Importar Horarios</a>
+        <a href="/reloj" target="_blank" class="btn btn-primary">⏱️ Ver Reloj de Asistencia</a>
+        <button type="button" id="btnCopiarLinkReloj" class="btn btn-outline">🔗 Copiar Link del Reloj</button>
     </div>
 </div>
 
@@ -147,6 +149,19 @@ document.getElementById('formTurno').addEventListener('submit', async (e) => {
         location.reload();
     } catch (err) {
         alert('No se pudo guardar el turno: ' + err.message);
+    }
+});
+
+document.getElementById('btnCopiarLinkReloj')?.addEventListener('click', async () => {
+    const url = window.location.origin + '/reloj';
+    try {
+        await navigator.clipboard.writeText(url);
+        const btn = document.getElementById('btnCopiarLinkReloj');
+        const textoOriginal = btn.textContent;
+        btn.textContent = '✅ Link copiado';
+        setTimeout(() => { btn.textContent = textoOriginal; }, 2000);
+    } catch (err) {
+        prompt('Copia este link y compartelo con tus empleados:', url);
     }
 });
 </script>
