@@ -11,9 +11,18 @@
     .hoja { background:#fff; max-width: 850px; margin: 0 auto; padding: 28px; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
     .hoja-ticket { max-width: 320px; font-size: 11px; padding: 12px; }
     .firma-linea { border-top: 1px solid #334155; margin-top: 40px; padding-top: 4px; text-align:center; font-size: 11px; }
+    <% if (formato === 'carta') { %>
+    /* Orientacion horizontal: la tabla resumen tiene muchas columnas
+       (colaborador, salarios, horas extra, transporte, deducciones...)
+       y en vertical (portrait) el navegador la reduce mucho o la corta. */
+    @page { size: landscape; margin: 12mm; }
+    <% } %>
     @media print {
         body { background: #fff; }
         .hoja { box-shadow:none; max-width:100%; padding:0; }
+        <% if (formato === 'carta') { %>
+        .hoja { max-width: none; }
+        <% } %>
     }
 </style>
 </head>
