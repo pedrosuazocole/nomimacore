@@ -76,6 +76,15 @@
             <input type="checkbox" id="mLibre" name="es_dia_libre"> Es dia libre / descanso
         </label>
 
+        <div class="mb-3">
+            <label class="block text-xs font-medium mb-1">Turno rapido (Tienda)</label>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" class="btn-turno text-xs px-2 py-2 rounded-lg border border-slate-300 hover:border-[#0D9488] hover:bg-teal-50" data-inicio="06:00" data-fin="14:00">🌅 6am-2pm</button>
+                <button type="button" class="btn-turno text-xs px-2 py-2 rounded-lg border border-slate-300 hover:border-[#0D9488] hover:bg-teal-50" data-inicio="14:00" data-fin="21:00">☀️ 2pm-9pm</button>
+                <button type="button" class="btn-turno text-xs px-2 py-2 rounded-lg border border-slate-300 hover:border-[#0D9488] hover:bg-teal-50" data-inicio="21:00" data-fin="06:00">🌙 9pm-6am</button>
+            </div>
+        </div>
+
         <div class="grid grid-cols-2 gap-3 mb-3">
             <div>
                 <label class="block text-xs font-medium mb-1">Hora Entrada</label>
@@ -113,6 +122,15 @@ document.querySelectorAll('.celda-turno').forEach(btn => {
 });
 document.getElementById('mCancelar').addEventListener('click', () => {
     modal.classList.add('hidden'); modal.classList.remove('flex');
+});
+document.querySelectorAll('.btn-turno').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.getElementById('mEntrada').value = btn.dataset.inicio;
+        document.getElementById('mSalida').value = btn.dataset.fin;
+        document.getElementById('mLibre').checked = false;
+        document.querySelectorAll('.btn-turno').forEach(b => b.classList.remove('border-[#0D9488]', 'bg-teal-50'));
+        btn.classList.add('border-[#0D9488]', 'bg-teal-50');
+    });
 });
 document.getElementById('formTurno').addEventListener('submit', async (e) => {
     e.preventDefault();
