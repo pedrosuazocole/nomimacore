@@ -74,6 +74,41 @@
         <input class="input" type="number" step="0.01" name="rap_techo_salarial" value="<%= cfg.rap_techo_salarial %>">
     </div>
 
+    <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1 mt-2">Cuentas Contables (para el Asiento Contable)</h2>
+    <p class="md:col-span-2 text-xs text-slate-500 -mt-2">Ajusta estos codigos a tu catalogo de cuentas real. Se usan para generar el Asiento Contable en Reportes.</p>
+    <div>
+        <label class="block text-sm font-medium mb-1">Salario Ordinario</label>
+        <input class="input" type="text" name="cuenta_salario_ordinario" value="<%= cfg.cuenta_salario_ordinario %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Salario Extraordinario (Horas Extra)</label>
+        <input class="input" type="text" name="cuenta_salario_extraordinario" value="<%= cfg.cuenta_salario_extraordinario %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Transporte</label>
+        <input class="input" type="text" name="cuenta_transporte" value="<%= cfg.cuenta_transporte %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">IHSS por Pagar</label>
+        <input class="input" type="text" name="cuenta_ihss" value="<%= cfg.cuenta_ihss %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">RAP por Pagar</label>
+        <input class="input" type="text" name="cuenta_rap" value="<%= cfg.cuenta_rap %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Impuesto Vecinal por Pagar</label>
+        <input class="input" type="text" name="cuenta_impuesto_vecinal" value="<%= cfg.cuenta_impuesto_vecinal %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">ISR por Pagar</label>
+        <input class="input" type="text" name="cuenta_isr" value="<%= cfg.cuenta_isr %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Banco / Efectivo</label>
+        <input class="input" type="text" name="cuenta_banco" value="<%= cfg.cuenta_banco %>">
+    </div>
+
     <h2 class="md:col-span-2 font-bold text-[#0D9488] border-b pb-1 mt-2">Impresion</h2>
     <label class="flex items-center gap-2 text-sm md:col-span-2">
         <input type="checkbox" name="vista_previa_impresion_default" <%= cfg.vista_previa_impresion_default ? 'checked' : '' %>>
