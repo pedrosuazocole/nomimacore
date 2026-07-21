@@ -48,6 +48,15 @@ CREATE TABLE IF NOT EXISTS configuracion (
     dias_mes_planilla           INTEGER NOT NULL DEFAULT 30, -- salario diario = mensual/30
     whatsapp_contacto           TEXT DEFAULT '94502710',
     vista_previa_impresion_default INTEGER NOT NULL DEFAULT 1, -- 1=preview, 0=directa
+    -- Cuentas contables para el Asiento Contable (ajustalas a tu catalogo real)
+    cuenta_salario_ordinario     TEXT DEFAULT '5202-01-01',
+    cuenta_salario_extraordinario TEXT DEFAULT '5202-01-02',
+    cuenta_transporte            TEXT DEFAULT '5202-01-03',
+    cuenta_ihss                  TEXT DEFAULT '2107-01-01',
+    cuenta_rap                   TEXT DEFAULT '2107-01-03',
+    cuenta_impuesto_vecinal      TEXT DEFAULT '2107-01-04',
+    cuenta_isr                   TEXT DEFAULT '2107-01-05',
+    cuenta_banco                 TEXT DEFAULT '1101-01-01',
     updated_at                  TEXT DEFAULT (datetime('now','localtime'))
 );
 
@@ -185,6 +194,9 @@ CREATE TABLE IF NOT EXISTS planilla_detalle (
     vales                    REAL NOT NULL DEFAULT 0,
     impuesto_vecinal         REAL NOT NULL DEFAULT 0,
     isr                      REAL NOT NULL DEFAULT 0,
+    transporte_dias_11pm        INTEGER NOT NULL DEFAULT 0, -- dias que salio a las 11:00pm (L.100 c/u)
+    transporte_dias_doble_turno INTEGER NOT NULL DEFAULT 0, -- dias de doble turno hasta las 9:00pm (L.50 c/u)
+    transporte                REAL NOT NULL DEFAULT 0,       -- total calculado, se SUMA al total a pagar
     total_deducciones        REAL NOT NULL DEFAULT 0,
     total_pagar               REAL NOT NULL DEFAULT 0,
     observaciones             TEXT,
