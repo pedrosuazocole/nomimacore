@@ -41,17 +41,17 @@
 }) %>
 
 <div class="grid grid-cols-3 gap-3 mb-5">
-    <div class="stat-card stat-card--navy avoid-break">
-        <span class="stat-card__icon">📋</span>
-        <div><p class="stat-card__value"><%= totales.registros %></p><p class="stat-card__label">Registros</p></div>
+    <div class="stat-card-icon avoid-break">
+        <div class="stat-card-icon__badge stat-card-icon__badge--navy">📋</div>
+        <div><p class="stat-card-icon__label">Registros</p><p class="stat-card-icon__value"><%= totales.registros %></p></div>
     </div>
-    <div class="stat-card stat-card--teal avoid-break">
-        <span class="stat-card__icon">⏱️</span>
-        <div><p class="stat-card__value"><%= totales.horas %> h</p><p class="stat-card__label">Horas Totales</p></div>
+    <div class="stat-card-icon avoid-break">
+        <div class="stat-card-icon__badge stat-card-icon__badge--naranja">⏱️</div>
+        <div><p class="stat-card-icon__label">Horas Totales</p><p class="stat-card-icon__value"><%= totales.horas %> h</p></div>
     </div>
-    <div class="stat-card avoid-break" style="border-left-color:#9333ea">
-        <span class="stat-card__icon">📷</span>
-        <div><p class="stat-card__value" style="color:#9333ea"><%= totales.conFoto %></p><p class="stat-card__label">Con Foto</p></div>
+    <div class="stat-card-icon avoid-break">
+        <div class="stat-card-icon__badge stat-card-icon__badge--morado">📷</div>
+        <div><p class="stat-card-icon__label">Con Foto</p><p class="stat-card-icon__value"><%= totales.conFoto %></p></div>
     </div>
 </div>
 
@@ -82,7 +82,10 @@
                 <td>
                     <% if (r.foto_entrada) { %>
                         <a href="/turnos/foto/<%= r.foto_entrada %>" target="_blank" class="foto-evidencia-link">
-                            <img src="/turnos/foto/<%= r.foto_entrada %>" class="foto-evidencia" alt="Foto entrada de <%= r.nombre_completo %>" loading="lazy">
+                            <div class="foto-evidencia-card">
+                                <p class="foto-evidencia-card__label">Entrada</p>
+                                <img src="/turnos/foto/<%= r.foto_entrada %>" class="foto-evidencia-card__img" alt="Foto entrada de <%= r.nombre_completo %>" loading="lazy">
+                            </div>
                         </a>
                     <% } else { %>
                         <span class="text-xs text-slate-300">—</span>
@@ -92,7 +95,10 @@
                 <td>
                     <% if (r.foto_salida) { %>
                         <a href="/turnos/foto/<%= r.foto_salida %>" target="_blank" class="foto-evidencia-link">
-                            <img src="/turnos/foto/<%= r.foto_salida %>" class="foto-evidencia" alt="Foto salida de <%= r.nombre_completo %>" loading="lazy">
+                            <div class="foto-evidencia-card">
+                                <p class="foto-evidencia-card__label">Salida</p>
+                                <img src="/turnos/foto/<%= r.foto_salida %>" class="foto-evidencia-card__img" alt="Foto salida de <%= r.nombre_completo %>" loading="lazy">
+                            </div>
                         </a>
                     <% } else { %>
                         <span class="text-xs text-slate-300">—</span>
@@ -103,9 +109,9 @@
         <% }) %>
         </tbody>
         <tfoot>
-            <tr class="font-bold bg-slate-50">
+            <tr class="fila-total-destacada">
                 <td colspan="7">TOTAL HORAS</td>
-                <td><%= totales.horas %> h</td>
+                <td><span class="pildora-total"><%= totales.horas %> h</span></td>
             </tr>
         </tfoot>
     </table>
@@ -115,17 +121,13 @@
 <%- include('../partials/reporte_footer') %>
 
 <style>
-    /* Miniaturas de las fotos de evidencia: ya vienen optimizadas desde
-       el servidor (maximo 480px de ancho, JPEG calidad 72 — de varios MB
-       a unos 20-40 KB cada una), asi que aqui solo se controla el
-       TAMAÑO VISUAL dentro de la tabla, no hay que volver a comprimir. */
-    .foto-evidencia {
-        width: 46px; height: 46px; object-fit: cover; border-radius: .5rem;
-        border: 1px solid #e2e8f0;
-    }
+    /* Las fotos ya vienen optimizadas desde el servidor (maximo 480px de
+       ancho, JPEG calidad 72 — de varios MB a unos 20-40 KB cada una),
+       asi que aqui solo se controla el TAMAÑO VISUAL dentro de la
+       tarjeta, no hay que volver a comprimir. */
     .foto-evidencia-link { display: inline-block; }
     @media print {
-        .foto-evidencia { width: 38px; height: 38px; }
+        .foto-evidencia-card__img { width: 42px; height: 42px; }
         table.table-nomina th, table.table-nomina td { padding: .35rem .5rem; }
     }
 </style>
