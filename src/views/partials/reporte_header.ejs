@@ -5,23 +5,24 @@ const fechaGeneracion = new Date().toLocaleString('es-HN', { dateStyle: 'medium'
 <div class="reporte-letterhead avoid-break">
     <div class="reporte-letterhead__top">
         <div class="reporte-letterhead__brand">
-            <span class="reporte-letterhead__logo">🧾</span>
             <div>
-                <p class="reporte-letterhead__app">NominaCore <span>HN</span></p>
+                <p class="reporte-letterhead__app">NominaCore<span class="reporte-letterhead__badge">HN</span></p>
                 <p class="reporte-letterhead__tagline"><%= (appConfig && appConfig.empresa_nombre) || 'Sistema de Gestion de Planillas y Horarios' %></p>
             </div>
         </div>
         <div class="reporte-letterhead__meta">
             <p>Generado: <%= fechaGeneracion %></p>
             <% if (typeof usuarioActual !== 'undefined' && usuarioActual) { %>
-                <p>Por: <%= usuarioActual.nombre %></p>
+                <p>Usuario: <%= usuarioActual.nombre %></p>
             <% } %>
+            <p>Sistema: Metric Solutions &amp; POS</p>
         </div>
     </div>
+    <div class="reporte-letterhead__divider"></div>
     <div class="reporte-letterhead__titulo">
         <h1><%= tituloReporte %></h1>
         <% if (typeof subtitulo !== 'undefined' && subtitulo) { %>
-            <span class="reporte-letterhead__subtitulo">📅 <%= subtitulo %></span>
+            <span class="reporte-letterhead__subtitulo">Periodo: <%= subtitulo %></span>
         <% } %>
     </div>
 </div>
