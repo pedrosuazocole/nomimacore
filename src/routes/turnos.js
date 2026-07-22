@@ -36,5 +36,6 @@ router.post('/importar', (req, res, next) => {
 
 router.get('/', ctrl.matriz);
 router.post('/dia', ctrl.guardarDia);
+router.get('/foto/:archivo', ctrl.verFoto);
 
 module.exports = router;
