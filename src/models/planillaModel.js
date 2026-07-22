@@ -13,11 +13,16 @@ const PlanillaModel = {
         return db.prepare('SELECT * FROM planillas WHERE id = ?').get(id);
     },
 
-    crear({ nombre, empresa, tipoPeriodo, fechaInicio, fechaFin }) {
+    crear({ nombre, empresaId, tipoPeriodo, fechaInicio, fechaFin }) {
+        let nombreEmpresa = '';
+        if (empresaId) {
+            const empresa = db.prepare('SELECT nombre FROM empresas WHERE id = ?').get(empresaId);
+            nombreEmpresa = empresa ? empresa.nombre : '';
+        }
         const info = db.prepare(`
-            INSERT INTO planillas (nombre, empresa, tipo_periodo, fecha_inicio, fecha_fin, estado)
-            VALUES (?, ?, ?, ?, ?, 'BORRADOR')
-        `).run(nombre, empresa || '', tipoPeriodo, fechaInicio, fechaFin);
+            INSERT INTO planillas (nombre, empresa_id, empresa, tipo_periodo, fecha_inicio, fecha_fin, estado)
+            VALUES (?, ?, ?, ?, ?, ?, 'BORRADOR')
+        `).run(nombre, empresaId || null, nombreEmpresa, tipoPeriodo, fechaInicio, fechaFin);
         return this.obtener(info.lastInsertRowid);
     },
 
@@ -50,12 +55,16 @@ const PlanillaModel = {
                 planilla_id, empleado_id, salario_mensual, salario_diario, dias_trabajados,
                 septimo_dia_procede, salario_ordinario, septimo_dia_pago, salario_total,
                 horas_extras_horas, horas_extras_pago, sal_mas_he, ihss, rap, subtotal_neto,
-                prestamos, vales, impuesto_vecinal, isr, total_deducciones, total_pagar
+                prestamos, vales, impuesto_vecinal, isr,
+                transporte_dias_11pm, transporte_dias_doble_turno, transporte,
+                total_deducciones, total_pagar
             ) VALUES (
                 @planilla_id, @empleado_id, @salario_mensual, @salario_diario, @dias_trabajados,
                 @septimo_dia_procede, @salario_ordinario, @septimo_dia_pago, @salario_total,
                 @horas_extras_horas, @horas_extras_pago, @sal_mas_he, @ihss, @rap, @subtotal_neto,
-                @prestamos, @vales, @impuesto_vecinal, @isr, @total_deducciones, @total_pagar
+                @prestamos, @vales, @impuesto_vecinal, @isr,
+                @transporte_dias_11pm, @transporte_dias_doble_turno, @transporte,
+                @total_deducciones, @total_pagar
             )
             ON CONFLICT(planilla_id, empleado_id) DO UPDATE SET
                 salario_mensual = excluded.salario_mensual,
@@ -75,6 +84,9 @@ const PlanillaModel = {
                 vales = excluded.vales,
                 impuesto_vecinal = excluded.impuesto_vecinal,
                 isr = excluded.isr,
+                transporte_dias_11pm = excluded.transporte_dias_11pm,
+                transporte_dias_doble_turno = excluded.transporte_dias_doble_turno,
+                transporte = excluded.transporte,
                 total_deducciones = excluded.total_deducciones,
                 total_pagar = excluded.total_pagar
         `).run({ planilla_id: planillaId, empleado_id: empleadoId, ...calc });
