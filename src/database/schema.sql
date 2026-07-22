@@ -63,6 +63,20 @@ CREATE TABLE IF NOT EXISTS configuracion (
 INSERT OR IGNORE INTO configuracion (id) VALUES (1);
 
 -- ---------------------------------------------------------------------
+-- EMPRESAS (para clientes multi-empresa, ej. Grupo Yacaman)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS empresas (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre          TEXT NOT NULL UNIQUE,
+    rtn             TEXT,
+    direccion       TEXT,
+    telefono        TEXT,
+    estado          TEXT NOT NULL DEFAULT 'ACTIVA' CHECK (estado IN ('ACTIVA','INACTIVA')),
+    created_at      TEXT DEFAULT (datetime('now','localtime')),
+    updated_at      TEXT DEFAULT (datetime('now','localtime'))
+);
+
+-- ---------------------------------------------------------------------
 -- EMPLEADOS
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS empleados (
@@ -71,7 +85,8 @@ CREATE TABLE IF NOT EXISTS empleados (
     nombre_completo     TEXT NOT NULL,
     departamento        TEXT NOT NULL DEFAULT 'General',
     cargo               TEXT,
-    empresa             TEXT DEFAULT '',              -- multi-empresa (ej. Grupo Yacaman)
+    empresa_id           INTEGER REFERENCES empresas(id), -- fuente de verdad (usa el modulo Empresas)
+    empresa             TEXT DEFAULT '',              -- se mantiene sincronizado con empresas.nombre, para no romper reportes existentes
     cuenta_contable     TEXT,                          -- cuenta contable de gasto/salario
     salario_base        REAL NOT NULL DEFAULT 0,       -- salario mensual
     tipo_pago           TEXT NOT NULL DEFAULT 'MENSUAL' CHECK (tipo_pago IN ('MENSUAL','QUINCENAL','SEMANAL','HORA')),
@@ -148,7 +163,8 @@ CREATE INDEX IF NOT EXISTS idx_hextras_empleado ON horas_extras_semanal(empleado
 CREATE TABLE IF NOT EXISTS planillas (
     id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre              TEXT NOT NULL,               -- ej: "Planilla Semanal 1 al 7 de Junio 2026"
-    empresa             TEXT DEFAULT '',
+    empresa_id           INTEGER REFERENCES empresas(id), -- fuente de verdad (usa el modulo Empresas)
+    empresa             TEXT DEFAULT '',              -- se mantiene sincronizado con empresas.nombre, para no romper reportes existentes
     tipo_periodo        TEXT NOT NULL CHECK (tipo_periodo IN ('SEMANAL','QUINCENAL','MENSUAL')),
     fecha_inicio        TEXT NOT NULL,
     fecha_fin           TEXT NOT NULL,
