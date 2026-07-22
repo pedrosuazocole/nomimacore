@@ -99,7 +99,7 @@ const TurnoModel = {
         return db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
     },
 
-    marcarEntrada(empleadoId) {
+    marcarEntrada(empleadoId, fotoNombreArchivo = null) {
         const fecha = fechaHondurasHoy();
         const hora = horaHondurasAhora();
         const existente = db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
@@ -109,19 +109,20 @@ const TurnoModel = {
         }
 
         db.prepare(`
-            INSERT INTO turnos_horarios (empleado_id, fecha, hora_entrada_real, tipo_turno, es_dia_libre)
-            VALUES (?, ?, ?, 'DIARIO', 0)
+            INSERT INTO turnos_horarios (empleado_id, fecha, hora_entrada_real, foto_entrada, tipo_turno, es_dia_libre)
+            VALUES (?, ?, ?, ?, 'DIARIO', 0)
             ON CONFLICT(empleado_id, fecha) DO UPDATE SET
                 hora_entrada_real = excluded.hora_entrada_real,
+                foto_entrada = excluded.foto_entrada,
                 es_dia_libre = 0,
                 updated_at = datetime('now','localtime')
-        `).run(empleadoId, fecha, hora);
+        `).run(empleadoId, fecha, hora, fotoNombreArchivo);
 
         const turno = db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
         return { ok: true, mensaje: `Entrada marcada a las ${hora}.`, turno };
     },
 
-    marcarSalida(empleadoId) {
+    marcarSalida(empleadoId, fotoNombreArchivo = null) {
         const fecha = fechaHondurasHoy();
         const hora = horaHondurasAhora();
         const existente = db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
@@ -137,9 +138,9 @@ const TurnoModel = {
 
         db.prepare(`
             UPDATE turnos_horarios SET
-                hora_salida_real = ?, horas_trabajadas = ?, updated_at = datetime('now','localtime')
+                hora_salida_real = ?, horas_trabajadas = ?, foto_salida = ?, updated_at = datetime('now','localtime')
             WHERE empleado_id = ? AND fecha = ?
-        `).run(hora, horas, empleadoId, fecha);
+        `).run(hora, horas, fotoNombreArchivo, empleadoId, fecha);
 
         const turno = db.prepare('SELECT * FROM turnos_horarios WHERE empleado_id = ? AND fecha = ?').get(empleadoId, fecha);
         return { ok: true, mensaje: `Salida marcada a las ${hora}. Trabajaste ${horas} h hoy.`, turno };
