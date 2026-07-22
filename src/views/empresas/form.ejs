@@ -1,0 +1,38 @@
+<h1 class="text-2xl font-bold text-[#1B2A4A] mb-5"><%= title %></h1>
+
+<% if (errores && errores.length) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-300 text-red-700 px-4 py-3 text-sm">
+        <ul class="list-disc pl-5"><% errores.forEach(e => { %><li><%= e %></li><% }) %></ul>
+    </div>
+<% } %>
+
+<form method="POST" action="<%= empresa.id ? '/empresas/' + empresa.id + '?_method=PUT' : '/empresas' %>" class="card grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+    <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Nombre de la Empresa *</label>
+        <input class="input" type="text" name="nombre" required value="<%= empresa.nombre || '' %>" placeholder="ej: Inversiones Buenos Aires S.A.">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">RTN</label>
+        <input class="input" type="text" name="rtn" value="<%= empresa.rtn || '' %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Telefono</label>
+        <input class="input" type="text" name="telefono" value="<%= empresa.telefono || '' %>">
+    </div>
+    <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Direccion</label>
+        <input class="input" type="text" name="direccion" value="<%= empresa.direccion || '' %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Estado</label>
+        <select class="input" name="estado">
+            <option value="ACTIVA" <%= empresa.estado !== 'INACTIVA' ? 'selected' : '' %>>Activa</option>
+            <option value="INACTIVA" <%= empresa.estado === 'INACTIVA' ? 'selected' : '' %>>Inactiva</option>
+        </select>
+    </div>
+
+    <div class="md:col-span-2 flex gap-3 pt-2">
+        <button class="btn btn-primary">Guardar</button>
+        <a href="/empresas" class="btn btn-outline">Cancelar</a>
+    </div>
+</form>
