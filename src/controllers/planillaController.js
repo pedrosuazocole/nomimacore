@@ -1,5 +1,6 @@
 const PlanillaModel = require('../models/planillaModel');
 const EmpleadoModel = require('../models/empleadoModel');
+const EmpresaModel = require('../models/empresaModel');
 const TurnoModel = require('../models/turnoModel');
 const db = require('../config/db');
 const {
@@ -20,24 +21,26 @@ const PlanillaController = {
     },
 
     nuevaForm(req, res) {
-        res.render('planillas/nueva', { title: 'Nueva Planilla', errores: [] });
+        res.render('planillas/nueva', { title: 'Nueva Planilla', empresas: EmpresaModel.listar({ estado: 'ACTIVA' }), errores: [] });
     },
 
     crear(req, res) {
-        const { nombre, empresa, tipo_periodo, fecha_inicio, fecha_fin } = req.body;
+        const { nombre, empresa_id, tipo_periodo, fecha_inicio, fecha_fin } = req.body;
         if (!nombre || !tipo_periodo || !fecha_inicio || !fecha_fin) {
             return res.status(400).render('planillas/nueva', {
                 title: 'Nueva Planilla',
+                empresas: EmpresaModel.listar({ estado: 'ACTIVA' }),
                 errores: ['Todos los campos son obligatorios.']
             });
         }
         if (new Date(fecha_fin) < new Date(fecha_inicio)) {
             return res.status(400).render('planillas/nueva', {
                 title: 'Nueva Planilla',
+                empresas: EmpresaModel.listar({ estado: 'ACTIVA' }),
                 errores: ['La fecha fin no puede ser anterior a la fecha inicio.']
             });
         }
-        const planilla = PlanillaModel.crear({ nombre, empresa, tipoPeriodo: tipo_periodo, fechaInicio: fecha_inicio, fechaFin: fecha_fin });
+        const planilla = PlanillaModel.crear({ nombre, empresaId: empresa_id, tipoPeriodo: tipo_periodo, fechaInicio: fecha_inicio, fechaFin: fecha_fin });
         res.redirect(`/planillas/${planilla.id}/procesar`);
     },
 

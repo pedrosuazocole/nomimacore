@@ -1,21 +1,24 @@
 const EmpleadoModel = require('../models/empleadoModel');
+const EmpresaModel = require('../models/empresaModel');
 const { generarPlantilla, procesarImportacion } = require('../services/empleadoImportService');
 
 const EmpleadoController = {
     index(req, res) {
-        const { estado, departamento, q } = req.query;
-        const empleados = EmpleadoModel.listar({ estado, departamento, q });
+        const { estado, departamento, empresa_id, q } = req.query;
+        const empleados = EmpleadoModel.listar({ estado, departamento, empresa_id, q });
         const departamentos = EmpleadoModel.departamentos();
+        const empresas = EmpresaModel.listar();
         res.render('empleados/index', {
             title: 'Empleados',
             empleados,
             departamentos,
-            filtros: { estado, departamento, q }
+            empresas,
+            filtros: { estado, departamento, empresa_id, q }
         });
     },
 
     nuevoForm(req, res) {
-        res.render('empleados/form', { title: 'Nuevo Empleado', empleado: {}, errores: [] });
+        res.render('empleados/form', { title: 'Nuevo Empleado', empleado: {}, empresas: EmpresaModel.listar({ estado: 'ACTIVA' }), errores: [] });
     },
 
     async crear(req, res) {
@@ -27,6 +30,7 @@ const EmpleadoController = {
             res.status(400).render('empleados/form', {
                 title: 'Nuevo Empleado',
                 empleado: req.body,
+                empresas: EmpresaModel.listar({ estado: 'ACTIVA' }),
                 errores: [err.message]
             });
         }
@@ -35,7 +39,7 @@ const EmpleadoController = {
     editarForm(req, res) {
         const empleado = EmpleadoModel.obtener(req.params.id);
         if (!empleado) return res.status(404).send('Empleado no encontrado');
-        res.render('empleados/form', { title: 'Editar Empleado', empleado, errores: [] });
+        res.render('empleados/form', { title: 'Editar Empleado', empleado, empresas: EmpresaModel.listar({ estado: 'ACTIVA' }), errores: [] });
     },
 
     async actualizar(req, res) {
@@ -47,6 +51,7 @@ const EmpleadoController = {
             res.status(400).render('empleados/form', {
                 title: 'Editar Empleado',
                 empleado: { ...req.body, id: req.params.id },
+                empresas: EmpresaModel.listar({ estado: 'ACTIVA' }),
                 errores: [err.message]
             });
         }
