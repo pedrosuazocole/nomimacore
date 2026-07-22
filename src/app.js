@@ -6,6 +6,7 @@ const methodOverride = require('method-override');
 const session = require('express-session');
 
 const authRouter = require('./routes/auth');
+const relojRouter = require('./routes/reloj');
 const usuariosRouter = require('./routes/usuarios');
 const empleadosRouter = require('./routes/empleados');
 const turnosRouter = require('./routes/turnos');
@@ -68,6 +69,9 @@ app.use((req, res, next) => {
 
 // ---- Rutas publicas ----
 app.use('/', authRouter);
+// El reloj de asistencia es publico a proposito: los empleados marcan
+// desde su propio celular y no tienen cuenta de usuario de NominaCore.
+app.use('/reloj', relojRouter);
 
 // ---- Rutas protegidas (requieren sesion activa) ----
 app.get('/', requireAuth, (req, res) => res.redirect('/planillas'));
