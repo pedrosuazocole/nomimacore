@@ -13,7 +13,15 @@
     </div>
     <div class="md:col-span-2">
         <label class="block text-sm font-medium mb-1">Empresa</label>
-        <input class="input" type="text" name="empresa" placeholder="ej: Inversiones Buenos Aires S.A.">
+        <select class="input" name="empresa_id">
+            <option value="">Sin empresa asignada</option>
+            <% empresas.forEach(e => { %>
+                <option value="<%= e.id %>"><%= e.nombre %></option>
+            <% }) %>
+        </select>
+        <% if (empresas.length === 0) { %>
+            <p class="text-xs text-amber-600 mt-1">Todavia no hay empresas creadas — <a href="/empresas/nuevo" class="underline">crea una primero</a>.</p>
+        <% } %>
     </div>
     <div>
         <label class="block text-sm font-medium mb-1">Tipo de Periodo *</label>
