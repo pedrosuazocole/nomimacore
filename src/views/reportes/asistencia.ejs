@@ -1,0 +1,131 @@
+<div class="mb-5 no-print">
+    <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
+</div>
+
+<form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 no-print">
+    <div>
+        <label class="block text-xs font-medium mb-1">Dia Inicio</label>
+        <input class="input" type="date" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Dia Final</label>
+        <input class="input" type="date" name="fecha_fin" value="<%= filtros.fecha_fin %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Empleado</label>
+        <select class="input" name="empleado_id">
+            <option value="">Todos</option>
+            <% empleados.forEach(e => { %><option value="<%= e.id %>" <%= String(filtros.empleado_id) === String(e.id) ? 'selected' : '' %>><%= e.nombre_completo %></option><% }) %>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Departamento</label>
+        <select class="input" name="departamento">
+            <option value="">Todos</option>
+            <% departamentos.forEach(d => { %><option value="<%= d %>" <%= filtros.departamento === d ? 'selected' : '' %>><%= d %></option><% }) %>
+        </select>
+    </div>
+    <div class="flex items-end">
+        <button class="btn btn-secondary w-full">Filtrar</button>
+    </div>
+</form>
+
+<div class="flex flex-wrap gap-2 mb-5 no-print">
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir (con fotos)</button>
+    <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar datos a Excel (sin fotos)</a>
+</div>
+
+<%- include('../partials/reporte_header', {
+    tituloReporte: 'Reporte de Marcas de Asistencia',
+    subtitulo: `${filtros.fecha_inicio} al ${filtros.fecha_fin}`
+}) %>
+
+<div class="grid grid-cols-3 gap-3 mb-5">
+    <div class="stat-card stat-card--navy avoid-break">
+        <span class="stat-card__icon">📋</span>
+        <div><p class="stat-card__value"><%= totales.registros %></p><p class="stat-card__label">Registros</p></div>
+    </div>
+    <div class="stat-card stat-card--teal avoid-break">
+        <span class="stat-card__icon">⏱️</span>
+        <div><p class="stat-card__value"><%= totales.horas %> h</p><p class="stat-card__label">Horas Totales</p></div>
+    </div>
+    <div class="stat-card avoid-break" style="border-left-color:#9333ea">
+        <span class="stat-card__icon">📷</span>
+        <div><p class="stat-card__value" style="color:#9333ea"><%= totales.conFoto %></p><p class="stat-card__label">Con Foto</p></div>
+    </div>
+</div>
+
+<% if (filas.length === 0) { %>
+    <div class="reporte-vacio avoid-break">
+        <div class="reporte-vacio__icon">📷</div>
+        <p class="font-medium text-slate-600">No hay marcas de asistencia en el rango seleccionado.</p>
+    </div>
+<% } else { %>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead>
+            <tr>
+                <th>Empleado</th><th>Departamento</th><th>Fecha</th>
+                <th>Hora Entrada</th><th>Foto Entrada</th>
+                <th>Hora Salida</th><th>Foto Salida</th>
+                <th>Horas</th>
+            </tr>
+        </thead>
+        <tbody>
+        <% filas.forEach(r => { %>
+            <tr class="avoid-break">
+                <td class="font-medium whitespace-nowrap"><%= r.nombre_completo %></td>
+                <td><%= r.departamento %></td>
+                <td class="whitespace-nowrap"><%= r.fecha %></td>
+                <td><%= r.hora_entrada_real || '—' %></td>
+                <td>
+                    <% if (r.foto_entrada) { %>
+                        <a href="/turnos/foto/<%= r.foto_entrada %>" target="_blank" class="foto-evidencia-link">
+                            <img src="/turnos/foto/<%= r.foto_entrada %>" class="foto-evidencia" alt="Foto entrada de <%= r.nombre_completo %>" loading="lazy">
+                        </a>
+                    <% } else { %>
+                        <span class="text-xs text-slate-300">—</span>
+                    <% } %>
+                </td>
+                <td><%= r.hora_salida_real || '—' %></td>
+                <td>
+                    <% if (r.foto_salida) { %>
+                        <a href="/turnos/foto/<%= r.foto_salida %>" target="_blank" class="foto-evidencia-link">
+                            <img src="/turnos/foto/<%= r.foto_salida %>" class="foto-evidencia" alt="Foto salida de <%= r.nombre_completo %>" loading="lazy">
+                        </a>
+                    <% } else { %>
+                        <span class="text-xs text-slate-300">—</span>
+                    <% } %>
+                </td>
+                <td class="font-bold"><%= r.horas_trabajadas || 0 %> h</td>
+            </tr>
+        <% }) %>
+        </tbody>
+        <tfoot>
+            <tr class="font-bold bg-slate-50">
+                <td colspan="7">TOTAL HORAS</td>
+                <td><%= totales.horas %> h</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<% } %>
+
+<%- include('../partials/reporte_footer') %>
+
+<style>
+    /* Miniaturas de las fotos de evidencia: ya vienen optimizadas desde
+       el servidor (maximo 480px de ancho, JPEG calidad 72 — de varios MB
+       a unos 20-40 KB cada una), asi que aqui solo se controla el
+       TAMAÑO VISUAL dentro de la tabla, no hay que volver a comprimir. */
+    .foto-evidencia {
+        width: 46px; height: 46px; object-fit: cover; border-radius: .5rem;
+        border: 1px solid #e2e8f0;
+    }
+    .foto-evidencia-link { display: inline-block; }
+    @media print {
+        .foto-evidencia { width: 38px; height: 38px; }
+        table.table-nomina th, table.table-nomina td { padding: .35rem .5rem; }
+    }
+</style>
