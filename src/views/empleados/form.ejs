@@ -27,7 +27,15 @@
     </div>
     <div>
         <label class="block text-sm font-medium mb-1">Empresa</label>
-        <input class="input" type="text" name="empresa" placeholder="ej: Inversiones Buenos Aires S.A." value="<%= empleado.empresa || '' %>">
+        <select class="input" name="empresa_id">
+            <option value="">Sin empresa asignada</option>
+            <% empresas.forEach(emp => { %>
+                <option value="<%= emp.id %>" <%= String(empleado.empresa_id) === String(emp.id) ? 'selected' : '' %>><%= emp.nombre %></option>
+            <% }) %>
+        </select>
+        <% if (empresas.length === 0) { %>
+            <p class="text-xs text-amber-600 mt-1">Todavia no hay empresas creadas — <a href="/empresas/nuevo" class="underline">crea una primero</a>.</p>
+        <% } %>
     </div>
     <div>
         <label class="block text-sm font-medium mb-1">Cuenta Contable del Empleado</label>
