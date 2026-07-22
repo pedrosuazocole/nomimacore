@@ -343,6 +343,66 @@ const ReporteController = {
     // =================================================================
     // 6. PADRON DE EMPLEADOS
     // =================================================================
+    // =================================================================
+    // 7. REPORTE DE MARCAS DE ASISTENCIA DIARIA (con foto de evidencia)
+    // =================================================================
+    asistencia(req, res) {
+        // Honduras es siempre UTC-6 (sin horario de verano) — se usa el
+        // mismo desfase fijo que el Reloj de Asistencia (turnoModel.js),
+        // para que el filtro "hoy" por defecto coincida con la fecha con
+        // la que realmente se guardaron las marcas, incluso cerca de la
+        // medianoche donde la fecha UTC del servidor ya cambio de dia.
+        const hoy = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const f = {
+            fecha_inicio: req.query.fecha_inicio || hoy,
+            fecha_fin: req.query.fecha_fin || hoy,
+            empleado_id: req.query.empleado_id || '',
+            departamento: req.query.departamento || ''
+        };
+
+        const { where, params } = construirFiltros([
+            ['t.fecha >= ?', f.fecha_inicio],
+            ['t.fecha <= ?', f.fecha_fin],
+            ['t.empleado_id = ?', f.empleado_id],
+            ['e.departamento = ?', f.departamento]
+        ]);
+
+        const filas = db.prepare(`
+            SELECT t.*, e.nombre_completo, e.departamento
+            FROM turnos_horarios t
+            JOIN empleados e ON e.id = t.empleado_id
+            ${where}
+            ORDER BY t.fecha DESC, e.nombre_completo
+        `).all(...params);
+
+        const totales = {
+            registros: filas.length,
+            horas: round2(filas.reduce((acc, f) => acc + (Number(f.horas_trabajadas) || 0), 0)),
+            conFoto: filas.filter(f => f.foto_entrada || f.foto_salida).length
+        };
+
+        if (req.query.export === 'xlsx') {
+            return enviarExcel(res, 'reporte-asistencia.xlsx', {
+                titulo: 'Reporte de Marcas de Asistencia',
+                subtitulo: `${f.fecha_inicio} al ${f.fecha_fin} (solo datos, sin fotos)`,
+                headers: ['Empleado', 'Departamento', 'Fecha', 'Hora Entrada', 'Hora Salida', 'Horas Trabajadas', 'Tiene Foto Entrada', 'Tiene Foto Salida'],
+                filas: filas.map(r => [
+                    r.nombre_completo, r.departamento, r.fecha,
+                    r.hora_entrada_real || '—', r.hora_salida_real || '—', r.horas_trabajadas || 0,
+                    r.foto_entrada ? 'Si' : 'No', r.foto_salida ? 'Si' : 'No'
+                ]),
+                totales: ['TOTALES', '', '', '', '', totales.horas, '', '']
+            });
+        }
+
+        res.render('reportes/asistencia', {
+            title: 'Marcas de Asistencia',
+            filas, totales, filtros: f,
+            empleados: EmpleadoModel.listar(),
+            departamentos: EmpleadoModel.departamentos()
+        });
+    },
+
     padron(req, res) {
         const f = {
             estado: req.query.estado || 'ACTIVO',

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const sharp = require('sharp');
 const EmpleadoModel = require('../models/empleadoModel');
 const TurnoModel = require('../models/turnoModel');
 
@@ -29,7 +30,7 @@ const RelojController = {
         });
     },
 
-    marcar(req, res) {
+    async marcar(req, res) {
         const { empleado_id, tipo } = req.body;
         const empleado = EmpleadoModel.obtener(empleado_id);
 
@@ -43,6 +44,25 @@ const RelojController = {
         // no se registra la marca.
         if (!req.file) {
             return res.status(400).json({ ok: false, mensaje: 'Debes tomar una foto para marcar tu asistencia.' });
+        }
+
+        // Optimizar la foto: las selfies de celular normalmente pesan
+        // 2-6 MB a resolucion completa (innecesario para una foto de
+        // evidencia). Se reduce a un ancho maximo de 480px y se
+        // recomprime a JPEG calidad 72 — de varios MB a ~20-40 KB, sin
+        // que se pierda la posibilidad de reconocer a la persona.
+        // rotate() sin argumentos auto-orienta segun el EXIF de la
+        // camara (muy comun que las fotos de celular vengan "acostadas"
+        // si no se corrige esto).
+        try {
+            const bufferOptimizado = await sharp(req.file.path)
+                .rotate()
+                .resize({ width: 480, withoutEnlargement: true })
+                .jpeg({ quality: 72 })
+                .toBuffer();
+            fs.writeFileSync(req.file.path, bufferOptimizado);
+        } catch (err) {
+            console.error('⚠️ No se pudo optimizar la foto de asistencia, se guarda tal cual:', err.message);
         }
 
         const nombreArchivo = req.file.filename;
