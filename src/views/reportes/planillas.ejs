@@ -52,29 +52,41 @@
 }) %>
 
 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-    <div class="stat-card stat-card--navy avoid-break">
-        <span class="stat-card__icon">💰</span>
-        <div><p class="stat-card__value">L. <%= totales.total_salarios.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Salarios</p></div>
+    <div class="stat-card-v2 avoid-break">
+        <div class="stat-card-v2__bar stat-card-v2__bar--azul"></div>
+        <div class="stat-card-v2__body">
+            <p class="stat-card-v2__label">Salarios Base</p>
+            <p class="stat-card-v2__value">L. <%= totales.total_salarios.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
+        </div>
     </div>
-    <div class="stat-card stat-card--orange avoid-break">
-        <span class="stat-card__icon">⏱️</span>
-        <div><p class="stat-card__value">L. <%= totales.total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Horas Extra</p></div>
+    <div class="stat-card-v2 avoid-break">
+        <div class="stat-card-v2__bar stat-card-v2__bar--naranja"></div>
+        <div class="stat-card-v2__body">
+            <p class="stat-card-v2__label">Horas Extra</p>
+            <p class="stat-card-v2__value">L. <%= totales.total_extras.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
+        </div>
     </div>
-    <div class="stat-card stat-card--red avoid-break">
-        <span class="stat-card__icon">➖</span>
-        <div><p class="stat-card__value">L. <%= totales.total_deducciones.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Deducciones</p></div>
+    <div class="stat-card-v2 avoid-break">
+        <div class="stat-card-v2__bar stat-card-v2__bar--rojo"></div>
+        <div class="stat-card-v2__body">
+            <p class="stat-card-v2__label">Deducciones</p>
+            <p class="stat-card-v2__value">L. <%= totales.total_deducciones.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
+        </div>
     </div>
-    <div class="stat-card stat-card--total avoid-break">
-        <span class="stat-card__icon">✅</span>
-        <div><p class="stat-card__value">L. <%= totales.total_pagar.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p><p class="stat-card__label">Total a Pagar</p></div>
+    <div class="stat-card-v2 avoid-break">
+        <div class="stat-card-v2__bar stat-card-v2__bar--verde"></div>
+        <div class="stat-card-v2__body">
+            <p class="stat-card-v2__label">Total a Pagar</p>
+            <p class="stat-card-v2__value">L. <%= totales.total_pagar.toLocaleString('es-HN', {minimumFractionDigits:2}) %></p>
+        </div>
     </div>
 </div>
 
 <% if (filas.length === 0) { %>
-    <div class="reporte-vacio avoid-break">
-        <div class="reporte-vacio__icon">📋</div>
-        <p class="font-medium text-slate-600">No hay planillas en el rango seleccionado.</p>
-        <p class="text-sm">Ajusta las fechas o procesa una planilla primero.</p>
+    <div class="reporte-vacio-v2 avoid-break">
+        <div class="reporte-vacio-v2__icon">🗄️</div>
+        <p class="reporte-vacio-v2__titulo">No hay planillas en el rango seleccionado</p>
+        <p class="reporte-vacio-v2__texto">Ajuste el rango de fechas en los filtros del sistema o procese la planilla del periodo para desplegar los totales correspondientes.</p>
     </div>
 <% } else { %>
 <div class="card table-scroll">
