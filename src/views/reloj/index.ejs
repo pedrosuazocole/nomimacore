@@ -69,11 +69,25 @@
             <h2 id="nombreSeleccionado" class="text-xl font-bold text-[#1B2A4A] mb-4"></h2>
             <p id="estadoSeleccionado" class="text-sm text-slate-600 mb-4"></p>
 
-            <div class="flex flex-col gap-3">
+            <!-- Previsualizacion de la foto recien tomada (antes de confirmar) -->
+            <div id="previsualizacionFoto" class="hidden mb-4">
+                <img id="imgPreview" class="w-32 h-32 object-cover rounded-xl mx-auto border-4 border-teal-200 mb-3" alt="Foto tomada">
+                <div class="flex gap-2">
+                    <button type="button" id="btnRepetirFoto" class="btn btn-outline flex-1">🔄 Repetir</button>
+                    <button type="button" id="btnConfirmarFoto" class="btn btn-primary flex-1">✅ Confirmar</button>
+                </div>
+            </div>
+
+            <div id="botonesMarcaje" class="flex flex-col gap-3">
                 <button type="button" id="btnEntrada" class="btn-marcar btn-entrada">✅ Marcar Entrada</button>
                 <button type="button" id="btnSalida" class="btn-marcar btn-salida">🏁 Marcar Salida</button>
             </div>
+            <p class="text-xs text-slate-400 mt-3">📷 Se te va a pedir una foto como evidencia de tu marca.</p>
         </div>
+
+        <!-- Input de camara oculto: "capture=user" abre la camara frontal
+             directo en el celular, sin pedir galeria. -->
+        <input type="file" id="inputFoto" accept="image/*" capture="user" class="hidden">
 
         <div class="bg-white rounded-2xl p-5 mb-4">
             <p class="text-sm font-semibold text-[#1B2A4A] mb-1">¿Cual es tu turno hoy?</p>
@@ -90,6 +104,8 @@
 
 <script>
 let empleadoActual = null;
+let tipoMarcajePendiente = null;
+let fotoCapturada = null;
 
 // Reloj en vivo (solo visual; la hora que realmente queda guardada la
 // calcula el servidor, esto es nada mas para que el empleado la vea).
@@ -122,6 +138,7 @@ function mostrarPantallaMarcaje() {
     document.getElementById('pantallaMarcaje').classList.remove('hidden');
     document.getElementById('nombreSeleccionado').textContent = empleadoActual.nombre;
     document.getElementById('mensajeResultado').textContent = '';
+    ocultarPrevisualizacion();
     actualizarTextoTurno();
 
     const btnEntrada = document.getElementById('btnEntrada');
@@ -180,30 +197,70 @@ document.getElementById('btnVolver').addEventListener('click', () => {
     location.reload();
 });
 
+// ============ PASO 1: pedir la foto (abre la camara del celular) ============
+function pedirFoto(tipo) {
+    tipoMarcajePendiente = tipo;
+    document.getElementById('inputFoto').value = ''; // permite tomar otra si ya habia una
+    document.getElementById('inputFoto').click();
+}
+
+document.getElementById('inputFoto').addEventListener('change', (e) => {
+    const archivo = e.target.files[0];
+    if (!archivo) return;
+    fotoCapturada = archivo;
+    const url = URL.createObjectURL(archivo);
+    document.getElementById('imgPreview').src = url;
+    mostrarPrevisualizacion();
+});
+
+function mostrarPrevisualizacion() {
+    document.getElementById('previsualizacionFoto').classList.remove('hidden');
+    document.getElementById('botonesMarcaje').classList.add('hidden');
+}
+function ocultarPrevisualizacion() {
+    document.getElementById('previsualizacionFoto').classList.add('hidden');
+    document.getElementById('botonesMarcaje').classList.remove('hidden');
+    fotoCapturada = null;
+    tipoMarcajePendiente = null;
+}
+
+document.getElementById('btnRepetirFoto').addEventListener('click', () => {
+    pedirFoto(tipoMarcajePendiente);
+});
+
+// ============ PASO 2: confirmar y enviar la foto + la marca juntas ============
+document.getElementById('btnConfirmarFoto').addEventListener('click', () => {
+    marcar(tipoMarcajePendiente);
+});
+
 async function marcar(tipo) {
     const mensaje = document.getElementById('mensajeResultado');
     mensaje.textContent = 'Guardando...';
     mensaje.className = 'text-center text-sm font-medium text-slate-500';
     try {
-        const resp = await fetch('/reloj/marcar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ empleado_id: empleadoActual.id, tipo })
-        });
+        const formData = new FormData();
+        formData.append('empleado_id', empleadoActual.id);
+        formData.append('tipo', tipo);
+        if (fotoCapturada) formData.append('foto', fotoCapturada, 'evidencia.jpg');
+
+        const resp = await fetch('/reloj/marcar', { method: 'POST', body: formData });
         const data = await resp.json();
         mensaje.textContent = data.mensaje;
         mensaje.className = 'text-center text-sm font-medium ' + (data.ok ? 'text-emerald-300' : 'text-amber-300');
         if (data.ok) {
             setTimeout(() => location.reload(), 1500);
+        } else {
+            ocultarPrevisualizacion();
         }
     } catch (err) {
         mensaje.textContent = 'No se pudo conectar. Intenta de nuevo.';
         mensaje.className = 'text-center text-sm font-medium text-red-300';
+        ocultarPrevisualizacion();
     }
 }
 
-document.getElementById('btnEntrada').addEventListener('click', () => marcar('entrada'));
-document.getElementById('btnSalida').addEventListener('click', () => marcar('salida'));
+document.getElementById('btnEntrada').addEventListener('click', () => pedirFoto('entrada'));
+document.getElementById('btnSalida').addEventListener('click', () => pedirFoto('salida'));
 </script>
 </body>
 </html>
