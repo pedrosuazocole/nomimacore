@@ -1,3 +1,4 @@
+const fs = require('fs');
 const EmpleadoModel = require('../models/empleadoModel');
 const TurnoModel = require('../models/turnoModel');
 
@@ -33,12 +34,28 @@ const RelojController = {
         const empleado = EmpleadoModel.obtener(empleado_id);
 
         if (!empleado || empleado.estado !== 'ACTIVO') {
+            if (req.file) fs.unlink(req.file.path, () => {});
             return res.status(404).json({ ok: false, mensaje: 'Empleado no encontrado o inactivo.' });
         }
 
+        // La foto es obligatoria: es la evidencia de la marca. Si no
+        // llego el archivo (ej. el empleado nego el permiso de camara),
+        // no se registra la marca.
+        if (!req.file) {
+            return res.status(400).json({ ok: false, mensaje: 'Debes tomar una foto para marcar tu asistencia.' });
+        }
+
+        const nombreArchivo = req.file.filename;
         const resultado = tipo === 'salida'
-            ? TurnoModel.marcarSalida(empleado_id)
-            : TurnoModel.marcarEntrada(empleado_id);
+            ? TurnoModel.marcarSalida(empleado_id, nombreArchivo)
+            : TurnoModel.marcarEntrada(empleado_id, nombreArchivo);
+
+        // Si el modelo rechazo la marca (ej. "ya marcaste"), la foto que
+        // se acaba de subir no sirve para nada — se borra para no dejar
+        // archivos huerfanos en el volumen.
+        if (!resultado.ok) {
+            fs.unlink(req.file.path, () => {});
+        }
 
         res.json(resultado);
     },
