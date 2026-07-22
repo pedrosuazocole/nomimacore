@@ -100,6 +100,8 @@ CREATE TABLE IF NOT EXISTS turnos_horarios (
     horas_trabajadas        REAL DEFAULT 0,             -- calculado (soporta turnos que cruzan medianoche)
     tipo_turno              TEXT DEFAULT 'DIARIO' CHECK (tipo_turno IN ('DIARIO','SEMANAL')),
     es_dia_libre             INTEGER NOT NULL DEFAULT 0, -- 1 = no laboro ese dia
+    foto_entrada             TEXT,                        -- ruta del archivo de evidencia (Reloj de Asistencia)
+    foto_salida              TEXT,
     observaciones           TEXT,
     created_at              TEXT DEFAULT (datetime('now','localtime')),
     updated_at              TEXT DEFAULT (datetime('now','localtime')),

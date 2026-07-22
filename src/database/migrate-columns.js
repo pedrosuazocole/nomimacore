@@ -8,12 +8,24 @@
 // columna ya existe antes de intentar agregarla.
 // =====================================================================
 
+function tablaExiste(db, tabla) {
+    const row = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`).get(tabla);
+    return !!row;
+}
+
 function columnaExiste(db, tabla, columna) {
     const columnas = db.prepare(`PRAGMA table_info(${tabla})`).all();
     return columnas.some(c => c.name === columna);
 }
 
 function agregarColumnaSiFalta(db, tabla, columna, definicion) {
+    // Si la tabla en si todavia no existe (ej. BD parcialmente
+    // inicializada), se salta con un aviso en vez de tumbar toda la
+    // app — el proximo arranque (o schema.sql) la terminara de crear.
+    if (!tablaExiste(db, tabla)) {
+        console.log(`⚠️  Migracion: la tabla "${tabla}" todavia no existe, se omite (no es un error).`);
+        return;
+    }
     if (!columnaExiste(db, tabla, columna)) {
         console.log(`🔧 Migrando: agregando columna "${columna}" a "${tabla}"...`);
         db.exec(`ALTER TABLE ${tabla} ADD COLUMN ${columna} ${definicion}`);
@@ -36,6 +48,12 @@ function migrarColumnasFaltantes(db) {
     agregarColumnaSiFalta(db, 'configuracion', 'cuenta_impuesto_vecinal', "TEXT DEFAULT '2107-01-04'");
     agregarColumnaSiFalta(db, 'configuracion', 'cuenta_isr', "TEXT DEFAULT '2107-01-05'");
     agregarColumnaSiFalta(db, 'configuracion', 'cuenta_banco', "TEXT DEFAULT '1101-01-01'");
+
+    // Fotos de evidencia del Reloj de Asistencia (guarda la ruta relativa
+    // del archivo, no la imagen en si — la imagen queda en el volumen
+    // persistente junto a la base de datos).
+    agregarColumnaSiFalta(db, 'turnos_horarios', 'foto_entrada', "TEXT");
+    agregarColumnaSiFalta(db, 'turnos_horarios', 'foto_salida', "TEXT");
 }
 
 module.exports = { migrarColumnasFaltantes };
