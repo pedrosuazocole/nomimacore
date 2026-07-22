@@ -10,5 +10,6 @@ router.get('/horas-extra', ctrl.horasExtra);
 router.get('/deducciones', ctrl.deducciones);
 router.get('/empleado', ctrl.empleado);
 router.get('/padron', ctrl.padron);
+router.get('/asistencia', ctrl.asistencia);
 
 module.exports = router;
