@@ -31,68 +31,86 @@ const RelojController = {
     },
 
     async marcar(req, res) {
-        const { empleado_id, tipo } = req.body;
-        const empleado = EmpleadoModel.obtener(empleado_id);
-
-        if (!empleado || empleado.estado !== 'ACTIVO') {
-            if (req.file) fs.unlink(req.file.path, () => {});
-            return res.status(404).json({ ok: false, mensaje: 'Empleado no encontrado o inactivo.' });
-        }
-
-        // La foto es obligatoria: es la evidencia de la marca. Si no
-        // llego el archivo (ej. el empleado nego el permiso de camara),
-        // no se registra la marca.
-        if (!req.file) {
-            return res.status(400).json({ ok: false, mensaje: 'Debes tomar una foto para marcar tu asistencia.' });
-        }
-
-        // Optimizar la foto: las selfies de celular normalmente pesan
-        // 2-6 MB a resolucion completa (innecesario para una foto de
-        // evidencia). Se reduce a un ancho maximo de 480px y se
-        // recomprime a JPEG calidad 72 — de varios MB a ~20-40 KB, sin
-        // que se pierda la posibilidad de reconocer a la persona.
-        // rotate() sin argumentos auto-orienta segun el EXIF de la
-        // camara (muy comun que las fotos de celular vengan "acostadas"
-        // si no se corrige esto).
         try {
-            const bufferOptimizado = await sharp(req.file.path)
-                .rotate()
-                .resize({ width: 480, withoutEnlargement: true })
-                .jpeg({ quality: 72 })
-                .toBuffer();
-            fs.writeFileSync(req.file.path, bufferOptimizado);
+            const { empleado_id, tipo } = req.body;
+            const empleado = EmpleadoModel.obtener(empleado_id);
+
+            if (!empleado || empleado.estado !== 'ACTIVO') {
+                if (req.file) fs.unlink(req.file.path, () => {});
+                return res.status(404).json({ ok: false, mensaje: 'Empleado no encontrado o inactivo.' });
+            }
+
+            // La foto es obligatoria: es la evidencia de la marca. Si no
+            // llego el archivo (ej. el empleado nego el permiso de camara),
+            // no se registra la marca.
+            if (!req.file) {
+                return res.status(400).json({ ok: false, mensaje: 'Debes tomar una foto para marcar tu asistencia.' });
+            }
+
+            // Optimizar la foto: las selfies de celular normalmente pesan
+            // 2-6 MB a resolucion completa (innecesario para una foto de
+            // evidencia). Se reduce a un ancho maximo de 480px y se
+            // recomprime a JPEG calidad 72 — de varios MB a ~20-40 KB, sin
+            // que se pierda la posibilidad de reconocer a la persona.
+            // rotate() sin argumentos auto-orienta segun el EXIF de la
+            // camara (muy comun que las fotos de celular vengan "acostadas"
+            // si no se corrige esto).
+            try {
+                const bufferOptimizado = await sharp(req.file.path)
+                    .rotate()
+                    .resize({ width: 480, withoutEnlargement: true })
+                    .jpeg({ quality: 72 })
+                    .toBuffer();
+                fs.writeFileSync(req.file.path, bufferOptimizado);
+            } catch (errOptimizar) {
+                console.error('⚠️ No se pudo optimizar la foto de asistencia, se guarda tal cual:', errOptimizar.message);
+            }
+
+            const nombreArchivo = req.file.filename;
+            const resultado = tipo === 'salida'
+                ? TurnoModel.marcarSalida(empleado_id, nombreArchivo)
+                : TurnoModel.marcarEntrada(empleado_id, nombreArchivo);
+
+            // Si el modelo rechazo la marca (ej. "ya marcaste"), la foto que
+            // se acaba de subir no sirve para nada — se borra para no dejar
+            // archivos huerfanos en el volumen.
+            if (!resultado.ok) {
+                fs.unlink(req.file.path, () => {});
+            }
+
+            res.json(resultado);
         } catch (err) {
-            console.error('⚠️ No se pudo optimizar la foto de asistencia, se guarda tal cual:', err.message);
+            // CRITICO: sin este catch, un error aqui (ej. una columna que
+            // todavia no existe en la BD por una migracion pendiente)
+            // tumba TODO el proceso de Node para TODOS los usuarios, no
+            // solo falla esta peticion. Nunca debe volver a pasar.
+            console.error('💥 Error al marcar asistencia:', err.message);
+            if (req.file) fs.unlink(req.file.path, () => {});
+            res.status(500).json({
+                ok: false,
+                mensaje: 'Ocurrio un error guardando tu marca. Avisale al administrador (puede ser que falte una actualizacion pendiente en el sistema).'
+            });
         }
-
-        const nombreArchivo = req.file.filename;
-        const resultado = tipo === 'salida'
-            ? TurnoModel.marcarSalida(empleado_id, nombreArchivo)
-            : TurnoModel.marcarEntrada(empleado_id, nombreArchivo);
-
-        // Si el modelo rechazo la marca (ej. "ya marcaste"), la foto que
-        // se acaba de subir no sirve para nada — se borra para no dejar
-        // archivos huerfanos en el volumen.
-        if (!resultado.ok) {
-            fs.unlink(req.file.path, () => {});
-        }
-
-        res.json(resultado);
     },
 
     asignarTurno(req, res) {
-        const { empleado_id, inicio, fin } = req.body;
-        const empleado = EmpleadoModel.obtener(empleado_id);
+        try {
+            const { empleado_id, inicio, fin } = req.body;
+            const empleado = EmpleadoModel.obtener(empleado_id);
 
-        if (!empleado || empleado.estado !== 'ACTIVO') {
-            return res.status(404).json({ ok: false, mensaje: 'Empleado no encontrado o inactivo.' });
-        }
-        if (!inicio || !fin) {
-            return res.status(400).json({ ok: false, mensaje: 'Turno invalido.' });
-        }
+            if (!empleado || empleado.estado !== 'ACTIVO') {
+                return res.status(404).json({ ok: false, mensaje: 'Empleado no encontrado o inactivo.' });
+            }
+            if (!inicio || !fin) {
+                return res.status(400).json({ ok: false, mensaje: 'Turno invalido.' });
+            }
 
-        const turno = TurnoModel.asignarTurnoHoy(empleado_id, inicio, fin);
-        res.json({ ok: true, mensaje: `Turno de hoy asignado: ${inicio} a ${fin}.`, turno });
+            const turno = TurnoModel.asignarTurnoHoy(empleado_id, inicio, fin);
+            res.json({ ok: true, mensaje: `Turno de hoy asignado: ${inicio} a ${fin}.`, turno });
+        } catch (err) {
+            console.error('💥 Error al asignar turno:', err.message);
+            res.status(500).json({ ok: false, mensaje: 'Ocurrio un error guardando el turno.' });
+        }
     }
 };
 
