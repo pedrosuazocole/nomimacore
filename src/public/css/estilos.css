@@ -65,38 +65,38 @@ table.table-nomina tfoot tr { border-top: 2px solid #1B2A4A; }
 .reporte-letterhead {
     background: #fff;
     border-radius: 0.9rem;
-    padding: 1.5rem 1.75rem;
+    padding: 1.75rem 2rem;
     margin-bottom: 1.25rem;
     box-shadow: 0 1px 3px rgba(0,0,0,.08);
-    border-top: 5px solid;
-    border-image: linear-gradient(90deg, #1B2A4A, #0D9488, #D97A2C) 1;
 }
 .reporte-letterhead__top {
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: flex-start; justify-content: space-between;
     flex-wrap: wrap; gap: .75rem;
-    padding-bottom: 1rem; margin-bottom: 1rem;
-    border-bottom: 1px solid #e2e8f0;
 }
 .reporte-letterhead__brand { display: flex; align-items: center; gap: .65rem; }
-.reporte-letterhead__logo {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 2.5rem; height: 2.5rem; border-radius: .65rem;
-    background: linear-gradient(135deg, #0D9488, #0b7a70);
-    font-size: 1.25rem; flex-shrink: 0;
+.reporte-letterhead__app {
+    font-weight: 800; color: #0f172a; font-size: 1.9rem; line-height: 1.1;
+    letter-spacing: -.01em;
 }
-.reporte-letterhead__app { font-weight: 800; color: #1B2A4A; font-size: 1rem; line-height: 1.1; }
-.reporte-letterhead__app span { color: #D97A2C; }
-.reporte-letterhead__tagline { font-size: .72rem; color: #94a3b8; }
-.reporte-letterhead__meta { text-align: right; font-size: .72rem; color: #94a3b8; }
-.reporte-letterhead__titulo h1 { font-size: 1.35rem; font-weight: 800; color: #1B2A4A; }
+.reporte-letterhead__badge {
+    display: inline-block; vertical-align: super; margin-left: .35rem;
+    background: #2563eb; color: #fff; font-size: .62rem; font-weight: 800;
+    padding: .18rem .42rem; border-radius: .4rem; letter-spacing: .02em;
+}
+.reporte-letterhead__tagline { font-size: 1rem; color: #64748b; margin-top: .15rem; }
+.reporte-letterhead__meta { text-align: right; font-size: .8rem; color: #64748b; line-height: 1.6; }
+.reporte-letterhead__divider { border-top: 1px dashed #cbd5e1; margin: 1.25rem 0 1.5rem; }
+.reporte-letterhead__titulo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
+.reporte-letterhead__titulo h1 { font-size: 1.6rem; font-weight: 800; color: #0f172a; }
 .reporte-letterhead__subtitulo {
-    display: inline-flex; align-items: center; gap: .35rem;
-    font-size: .78rem; color: #0D9488; background: #ecfdf9;
-    border: 1px solid #99e6da; padding: .2rem .65rem; border-radius: 999px;
-    margin-top: .4rem; font-weight: 600;
+    display: inline-flex; align-items: center;
+    font-size: .85rem; color: #1d4ed8; background: #eff6ff;
+    border: 1px solid #bfdbfe; padding: .45rem 1rem; border-radius: 999px;
+    font-weight: 700; white-space: nowrap;
 }
 
-/* Tarjetas de estadisticas con acento de color e icono */
+/* Tarjetas de estadisticas con acento de color e icono (estilo original,
+   se mantiene tal cual para no afectar los demas reportes) */
 .stat-card {
     background: #fff; border-radius: .8rem; padding: .9rem 1rem;
     box-shadow: 0 1px 3px rgba(0,0,0,.07);
@@ -119,12 +119,45 @@ table.table-nomina tfoot tr { border-top: 2px solid #1B2A4A; }
 .stat-card--total .stat-card__value, .stat-card--total .stat-card__label { color: #fff; }
 .stat-card--total .stat-card__label { color: #ccfbf1; }
 
-/* Estado vacio */
+/* Tarjetas de estadisticas v2: barra de color arriba, valor grande y
+   oscuro (sin colorear), usadas en el nuevo formato de Resumen de
+   Planillas. */
+.stat-card-v2 {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: .8rem;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.stat-card-v2__bar { height: 4px; width: 100%; }
+.stat-card-v2__bar--azul { background: #2563eb; }
+.stat-card-v2__bar--naranja { background: #f59e0b; }
+.stat-card-v2__bar--rojo { background: #ef4444; }
+.stat-card-v2__bar--verde { background: #10b981; }
+.stat-card-v2__body { padding: 1rem 1.1rem; }
+.stat-card-v2__label {
+    font-size: .7rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: #64748b; margin-bottom: .4rem;
+}
+.stat-card-v2__value { font-size: 1.55rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+
+/* Estado vacio (estilo original) */
 .reporte-vacio {
     text-align: center; padding: 3rem 1.5rem; color: #94a3b8;
     background: #fff; border-radius: .9rem; box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
 .reporte-vacio__icon { font-size: 2.5rem; margin-bottom: .5rem; }
+
+/* Estado vacio v2: caja punteada con icono en circulo, usada en el
+   nuevo formato de Resumen de Planillas. */
+.reporte-vacio-v2 {
+    text-align: center; padding: 3.5rem 1.5rem;
+    background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: .9rem;
+}
+.reporte-vacio-v2__icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 4rem; height: 4rem; border-radius: 999px; background: #e2e8f0;
+    font-size: 1.75rem; margin-bottom: 1.1rem; color: #64748b;
+}
+.reporte-vacio-v2__titulo { font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: .5rem; }
+.reporte-vacio-v2__texto { font-size: .85rem; color: #64748b; line-height: 1.6; max-width: 30rem; margin: 0 auto; }
 
 .reporte-footer {
     margin-top: 1.5rem; padding-top: .9rem; border-top: 1px solid #e2e8f0;
