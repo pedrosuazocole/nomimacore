@@ -49,6 +49,11 @@
                             <% } else if (t) { %>
                                 <span class="text-xs"><%= t.hora_entrada_real || t.hora_entrada_programada %> - <%= t.hora_salida_real || t.hora_salida_programada %></span>
                                 <br><span class="text-xs font-semibold text-[#0D9488]"><%= horas %> h</span>
+                                <% if (t.foto_entrada || t.foto_salida) { %>
+                                    <br>
+                                    <% if (t.foto_entrada) { %><a href="/turnos/foto/<%= t.foto_entrada %>" target="_blank" onclick="event.stopPropagation()" class="text-xs" title="Ver foto de entrada">📷E</a><% } %>
+                                    <% if (t.foto_salida) { %> <a href="/turnos/foto/<%= t.foto_salida %>" target="_blank" onclick="event.stopPropagation()" class="text-xs" title="Ver foto de salida">📷S</a><% } %>
+                                <% } %>
                             <% } else { %>
                                 <span class="text-xs text-slate-300">+ asignar</span>
                             <% } %>
