@@ -1,0 +1,28 @@
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+    <h1 class="text-2xl font-bold text-[#1B2A4A]">Usuarios del Sistema</h1>
+    <a href="/usuarios/nuevo" class="btn btn-primary">+ Nuevo Usuario</a>
+</div>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead>
+            <tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Ultimo Acceso</th><th></th></tr>
+        </thead>
+        <tbody>
+        <% usuarios.forEach(u => { %>
+            <tr>
+                <td><%= u.username %></td>
+                <td class="font-medium"><%= u.nombre_completo %></td>
+                <td><span class="text-xs px-2 py-1 rounded-full bg-slate-100"><%= u.rol %></span></td>
+                <td>
+                    <span class="text-xs px-2 py-1 rounded-full <%= u.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' %>">
+                        <%= u.activo ? 'Activo' : 'Inactivo' %>
+                    </span>
+                </td>
+                <td class="text-xs text-slate-500"><%= u.ultimo_acceso || 'Nunca' %></td>
+                <td><a href="/usuarios/<%= u.id %>/editar" class="text-[#0D9488] font-medium">Editar</a></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</div>

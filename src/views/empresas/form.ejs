@@ -1,0 +1,79 @@
+<h1 class="text-2xl font-bold text-[#1B2A4A] mb-5"><%= title %></h1>
+
+<% if (errores && errores.length) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-300 text-red-700 px-4 py-3 text-sm">
+        <ul class="list-disc pl-5"><% errores.forEach(e => { %><li><%= e %></li><% }) %></ul>
+    </div>
+<% } %>
+
+<form method="POST" action="<%= empresa.id ? '/empresas/' + empresa.id + '?_method=PUT' : '/empresas' %>" class="card grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+    <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Nombre de la Empresa *</label>
+        <input class="input" type="text" name="nombre" required value="<%= empresa.nombre || '' %>" placeholder="ej: Inversiones Buenos Aires S.A.">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">RTN</label>
+        <input class="input" type="text" name="rtn" value="<%= empresa.rtn || '' %>">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Telefono</label>
+        <input class="input" type="text" name="telefono" value="<%= empresa.telefono || '' %>">
+    </div>
+    <div class="md:col-span-2">
+        <label class="block text-sm font-medium mb-1">Direccion</label>
+        <input class="input" type="text" name="direccion" value="<%= empresa.direccion || '' %>">
+    </div>
+
+    <div class="md:col-span-2 border-t pt-4 mt-1">
+        <label class="block text-sm font-semibold mb-1 text-[#1B2A4A]">Ubicacion del negocio (para el Reloj de Asistencia)</label>
+        <p class="text-xs text-slate-500 mb-3">Al marcar entrada/salida, se compara la ubicacion del celular del empleado contra este punto. Si estas fisicamente en el negocio ahora, toca el boton para llenarlo automatico.</p>
+        <button type="button" id="btnUsarUbicacion" class="btn btn-outline text-sm mb-3">📍 Usar mi ubicacion actual</button>
+        <p id="estadoUbicacion" class="text-xs text-slate-500 mb-3"></p>
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Latitud</label>
+        <input class="input" type="text" id="inputLat" name="lat" value="<%= empresa.lat || '' %>" placeholder="ej: 15.5041">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Longitud</label>
+        <input class="input" type="text" id="inputLng" name="lng" value="<%= empresa.lng || '' %>" placeholder="ej: -88.0250">
+    </div>
+    <div>
+        <label class="block text-sm font-medium mb-1">Radio permitido (metros)</label>
+        <input class="input" type="number" name="radio_metros" value="<%= empresa.radio_metros || 150 %>" min="20">
+        <p class="text-xs text-slate-500 mt-1">Que tan lejos del negocio se acepta una marca sin marcarla como sospechosa.</p>
+    </div>
+
+    <div>
+        <label class="block text-sm font-medium mb-1">Estado</label>
+        <select class="input" name="estado">
+            <option value="ACTIVA" <%= empresa.estado !== 'INACTIVA' ? 'selected' : '' %>>Activa</option>
+            <option value="INACTIVA" <%= empresa.estado === 'INACTIVA' ? 'selected' : '' %>>Inactiva</option>
+        </select>
+    </div>
+
+    <div class="md:col-span-2 flex gap-3 pt-2">
+        <button class="btn btn-primary">Guardar</button>
+        <a href="/empresas" class="btn btn-outline">Cancelar</a>
+    </div>
+</form>
+
+<script>
+document.getElementById('btnUsarUbicacion').addEventListener('click', () => {
+    const estado = document.getElementById('estadoUbicacion');
+    if (!navigator.geolocation) {
+        estado.textContent = 'Tu navegador no soporta geolocalizacion.';
+        return;
+    }
+    estado.textContent = 'Obteniendo ubicacion...';
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            document.getElementById('inputLat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('inputLng').value = pos.coords.longitude.toFixed(6);
+            estado.textContent = '✅ Ubicacion capturada (precision: ' + Math.round(pos.coords.accuracy) + 'm). No olvides guardar.';
+        },
+        () => { estado.textContent = 'No se pudo obtener la ubicacion. Verifica el permiso de ubicacion del navegador.'; },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+});
+</script>

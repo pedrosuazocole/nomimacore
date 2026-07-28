@@ -1,0 +1,92 @@
+<div class="mb-5 no-print">
+    <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
+</div>
+
+<form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 no-print">
+    <div>
+        <label class="block text-xs font-medium mb-1">Desde</label>
+        <input class="input" type="date" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Hasta</label>
+        <input class="input" type="date" name="fecha_fin" value="<%= filtros.fecha_fin %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Tipo de Deduccion</label>
+        <select class="input" name="tipo">
+            <option value="TODOS" <%= filtros.tipo === 'TODOS' ? 'selected' : '' %>>Todas</option>
+            <option value="IHSS" <%= filtros.tipo === 'IHSS' ? 'selected' : '' %>>Solo IHSS</option>
+            <option value="RAP" <%= filtros.tipo === 'RAP' ? 'selected' : '' %>>Solo RAP</option>
+            <option value="PRESTAMOS" <%= filtros.tipo === 'PRESTAMOS' ? 'selected' : '' %>>Solo Prestamos</option>
+            <option value="VALES" <%= filtros.tipo === 'VALES' ? 'selected' : '' %>>Solo Vales</option>
+            <option value="IMPUESTO_VECINAL" <%= filtros.tipo === 'IMPUESTO_VECINAL' ? 'selected' : '' %>>Solo Impuesto Vecinal</option>
+            <option value="ISR" <%= filtros.tipo === 'ISR' ? 'selected' : '' %>>Solo ISR</option>
+        </select>
+    </div>
+    <div class="flex items-end">
+        <button class="btn btn-secondary w-full">Filtrar</button>
+    </div>
+</form>
+
+<div class="flex flex-wrap gap-2 mb-5 no-print">
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir</button>
+    <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
+</div>
+
+<%- include('../partials/reporte_header', {
+    tituloReporte: 'Reporte de Deducciones',
+    subtitulo: `${filtros.fecha_inicio} al ${filtros.fecha_fin} — ${filtros.tipo}`
+}) %>
+
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 mb-5">
+    <div class="stat-card stat-card--navy avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">🏥</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.ihss.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">IHSS</p></div></div>
+    <div class="stat-card stat-card--navy avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">🏦</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.rap.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">RAP</p></div></div>
+    <div class="stat-card stat-card--navy avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">🤝</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.prestamos.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Prestamos</p></div></div>
+    <div class="stat-card stat-card--navy avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">🎫</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.vales.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Vales</p></div></div>
+    <div class="stat-card stat-card--navy avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">🏛️</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.impuesto_vecinal.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Imp.Vecinal</p></div></div>
+    <div class="stat-card stat-card--navy avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">📄</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.isr.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">ISR</p></div></div>
+    <div class="stat-card stat-card--red avoid-break p-2"><span class="stat-card__icon" style="font-size:1.1rem">➖</span><div><p class="stat-card__value" style="font-size:.95rem">L. <%= totales.total_deducciones.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Total</p></div></div>
+</div>
+
+<% if (filas.length === 0) { %>
+    <div class="reporte-vacio avoid-break">
+        <div class="reporte-vacio__icon">➖</div>
+        <p class="font-medium text-slate-600">No hay deducciones registradas en el rango seleccionado.</p>
+    </div>
+<% } else { %>
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead><tr><th>Empleado</th><th>Depto.</th><th>Periodo</th><th>IHSS</th><th>RAP</th><th>Prestamos</th><th>Vales</th><th>Imp.Vecinal</th><th>ISR</th><th>Total Deducido</th></tr></thead>
+        <tbody>
+        <% filas.forEach(r => { %>
+            <tr class="avoid-break">
+                <td class="font-medium"><%= r.nombre_completo %></td>
+                <td><%= r.departamento %></td>
+                <td class="whitespace-nowrap"><%= r.fecha_inicio %> al <%= r.fecha_fin %></td>
+                <td>L. <%= Number(r.ihss).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.rap).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.prestamos).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.vales).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.impuesto_vecinal).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.isr).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td class="font-bold">L. <%= Number(r.total_deducciones).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+        <tfoot>
+            <tr class="font-bold bg-slate-50">
+                <td colspan="3">TOTALES</td>
+                <td>L. <%= totales.ihss.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.rap.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.prestamos.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.vales.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.impuesto_vecinal.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.isr.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.total_deducciones.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<% } %>
+
+<%- include('../partials/reporte_footer') %>

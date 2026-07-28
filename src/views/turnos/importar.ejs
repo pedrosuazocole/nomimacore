@@ -1,0 +1,72 @@
+<div class="flex items-center justify-between mb-5">
+    <h1 class="text-2xl font-bold text-[#1B2A4A]">Importar Horarios</h1>
+    <a href="/turnos" class="btn btn-outline">&larr; Volver</a>
+</div>
+
+<div class="card mb-5 bg-teal-50 border border-teal-200 text-sm">
+    <p class="mb-2">
+        1. Descarga la <a href="/turnos/plantilla" class="text-[#0D9488] underline font-medium">plantilla de Excel</a> si aun no la tienes.
+    </p>
+    <p class="mb-2">2. Llena una fila por cada dia trabajado (o marca "Es Dia Libre" para descansos). Identifica al empleado por Codigo Contable o Nombre Completo.</p>
+    <p>3. Sube el archivo aqui abajo. Si ya existe un turno para ese empleado en esa fecha, se <strong>actualiza</strong> en vez de duplicarse.</p>
+</div>
+
+<% if (errorGeneral) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-300 text-red-700 px-4 py-3 text-sm">
+        ⚠️ <%= errorGeneral %>
+    </div>
+<% } %>
+
+<form method="POST" action="/turnos/importar" enctype="multipart/form-data" class="card flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+    <div class="flex-1 w-full">
+        <label class="block text-sm font-medium mb-1">Archivo Excel (.xlsx o .xls)</label>
+        <input class="input" type="file" name="archivo" accept=".xlsx,.xls" required>
+    </div>
+    <button class="btn btn-primary whitespace-nowrap">Subir e Importar</button>
+</form>
+
+<% if (resultado) { %>
+    <% const creados = resultado.filter(r => r.accion === 'CREADO').length; %>
+    <% const actualizados = resultado.filter(r => r.accion === 'ACTUALIZADO').length; %>
+    <% const errores = resultado.filter(r => r.accion === 'ERROR').length; %>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+        <div class="card text-center">
+            <p class="text-3xl font-bold text-emerald-600"><%= creados %></p>
+            <p class="text-sm text-slate-600">Turnos Creados</p>
+        </div>
+        <div class="card text-center">
+            <p class="text-3xl font-bold text-[#0D9488]"><%= actualizados %></p>
+            <p class="text-sm text-slate-600">Turnos Actualizados</p>
+        </div>
+        <div class="card text-center">
+            <p class="text-3xl font-bold <%= errores > 0 ? 'text-red-600' : 'text-slate-400' %>"><%= errores %></p>
+            <p class="text-sm text-slate-600">Filas con Error</p>
+        </div>
+    </div>
+
+    <div class="card table-scroll">
+        <table class="table-nomina">
+            <thead><tr><th>Fila</th><th>Empleado</th><th>Resultado</th><th>Detalle</th></tr></thead>
+            <tbody>
+            <% resultado.forEach(r => { %>
+                <tr>
+                    <td><%= r.fila %></td>
+                    <td class="font-medium"><%= r.nombre %></td>
+                    <td>
+                        <span class="text-xs px-2 py-1 rounded-full
+                            <%= r.accion === 'CREADO' ? 'bg-emerald-100 text-emerald-700' : r.accion === 'ACTUALIZADO' ? 'bg-teal-100 text-teal-700' : 'bg-red-100 text-red-700' %>">
+                            <%= r.accion %>
+                        </span>
+                    </td>
+                    <td class="text-slate-500"><%= r.mensaje %></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-5">
+        <a href="/turnos" class="btn btn-primary">Ver Horarios</a>
+    </div>
+<% } %>

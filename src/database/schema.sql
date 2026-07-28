@@ -1,0 +1,258 @@
+-- =====================================================================
+-- NominaCore HN | Esquema de Base de Datos (SQLite)
+-- Sistema de Gestion de Planillas y Control de Horarios
+-- Basado en la logica real de calculo (Codigo de Trabajo de Honduras)
+-- =====================================================================
+
+PRAGMA foreign_keys = ON;
+
+-- ---------------------------------------------------------------------
+-- USUARIOS (login del sistema)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS usuarios (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    username            TEXT NOT NULL UNIQUE,          -- usado para iniciar sesion (puede ser email)
+    password_hash       TEXT NOT NULL,
+    nombre_completo     TEXT NOT NULL,
+    rol                 TEXT NOT NULL DEFAULT 'OPERADOR' CHECK (rol IN ('ADMIN','OPERADOR')),
+    activo              INTEGER NOT NULL DEFAULT 1,
+    intentos_fallidos   INTEGER NOT NULL DEFAULT 0,
+    bloqueado_hasta     TEXT,                            -- timestamp ISO; NULL = no bloqueado
+    ultimo_acceso       TEXT,
+    created_at          TEXT DEFAULT (datetime('now','localtime')),
+    updated_at          TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
+
+-- ---------------------------------------------------------------------
+-- CONFIGURACION: parametros legales/editables (jornadas, recargos,
+-- IHSS, RAP). Se guardan como fila unica editable desde la UI, en vez
+-- de "quemarlos" en el codigo, porque cambian con el tiempo.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS configuracion (
+    id                          INTEGER PRIMARY KEY CHECK (id = 1), -- fila unica
+    empresa_nombre              TEXT NOT NULL DEFAULT 'Mi Empresa S.A.',
+    empresa_rtn                 TEXT DEFAULT '',
+    horas_jornada_diurna        REAL NOT NULL DEFAULT 44,
+    horas_jornada_nocturna      REAL NOT NULL DEFAULT 36,
+    horas_jornada_mixta         REAL NOT NULL DEFAULT 42,
+    recargo_25                  REAL NOT NULL DEFAULT 1.25,
+    recargo_50                  REAL NOT NULL DEFAULT 1.50,
+    recargo_75                  REAL NOT NULL DEFAULT 1.75,
+    recargo_100                 REAL NOT NULL DEFAULT 2.00,
+    ihss_porcentaje_empleado    REAL NOT NULL DEFAULT 0.035,
+    ihss_techo_salarial         REAL NOT NULL DEFAULT 11903.13,
+    rap_porcentaje_empleado     REAL NOT NULL DEFAULT 0.015,
+    rap_techo_salarial          REAL NOT NULL DEFAULT 11903.13,
+    dias_mes_planilla           INTEGER NOT NULL DEFAULT 30, -- salario diario = mensual/30
+    whatsapp_contacto           TEXT DEFAULT '94502710',
+    vista_previa_impresion_default INTEGER NOT NULL DEFAULT 1, -- 1=preview, 0=directa
+    -- Cuentas contables para el Asiento Contable (ajustalas a tu catalogo real)
+    cuenta_salario_ordinario     TEXT DEFAULT '5202-01-01',
+    cuenta_salario_extraordinario TEXT DEFAULT '5202-01-02',
+    cuenta_transporte            TEXT DEFAULT '5202-01-03',
+    cuenta_ihss                  TEXT DEFAULT '2107-01-01',
+    cuenta_rap                   TEXT DEFAULT '2107-01-03',
+    cuenta_impuesto_vecinal      TEXT DEFAULT '2107-01-04',
+    cuenta_isr                   TEXT DEFAULT '2107-01-05',
+    cuenta_banco                 TEXT DEFAULT '1101-01-01',
+    whatsapp_apikey_callmebot   TEXT,                        -- API key gratuita de CallMeBot para notificaciones automaticas
+    hikvision_api_key           TEXT,                        -- llave secreta que el puente de Hikvision debe enviar para poder marcar asistencia
+    updated_at                  TEXT DEFAULT (datetime('now','localtime'))
+);
+
+INSERT OR IGNORE INTO configuracion (id) VALUES (1);
+
+-- ---------------------------------------------------------------------
+-- EMPRESAS (para clientes multi-empresa, ej. Grupo Yacaman)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS empresas (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre          TEXT NOT NULL UNIQUE,
+    rtn             TEXT,
+    direccion       TEXT,
+    telefono        TEXT,
+    lat             REAL,                        -- coordenada de referencia (ubicacion real del negocio)
+    lng             REAL,
+    radio_metros    INTEGER DEFAULT 150,          -- distancia maxima aceptada al marcar, en metros
+    estado          TEXT NOT NULL DEFAULT 'ACTIVA' CHECK (estado IN ('ACTIVA','INACTIVA')),
+    created_at      TEXT DEFAULT (datetime('now','localtime')),
+    updated_at      TEXT DEFAULT (datetime('now','localtime'))
+);
+
+-- ---------------------------------------------------------------------
+-- EMPLEADOS
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS empleados (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo_contable     TEXT UNIQUE,                 -- ej: 1106-01-26
+    codigo_hikvision    TEXT,                        -- ID de este empleado en el reloj biometrico Hikvision (employeeNoString)
+    nombre_completo     TEXT NOT NULL,
+    departamento        TEXT NOT NULL DEFAULT 'General',
+    cargo               TEXT,
+    empresa_id           INTEGER REFERENCES empresas(id), -- fuente de verdad (usa el modulo Empresas)
+    empresa             TEXT DEFAULT '',              -- se mantiene sincronizado con empresas.nombre, para no romper reportes existentes
+    cuenta_contable     TEXT,                          -- cuenta contable de gasto/salario
+    salario_base        REAL NOT NULL DEFAULT 0,       -- salario mensual
+    tipo_pago           TEXT NOT NULL DEFAULT 'MENSUAL' CHECK (tipo_pago IN ('MENSUAL','QUINCENAL','SEMANAL','HORA')),
+    tipo_jornada         TEXT NOT NULL DEFAULT 'DIURNA' CHECK (tipo_jornada IN ('DIURNA','NOCTURNA','MIXTA')),
+    fecha_ingreso       TEXT,
+    estado              TEXT NOT NULL DEFAULT 'ACTIVO' CHECK (estado IN ('ACTIVO','INACTIVO')),
+    created_at          TEXT DEFAULT (datetime('now','localtime')),
+    updated_at          TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_empleados_estado ON empleados(estado);
+CREATE INDEX IF NOT EXISTS idx_empleados_departamento ON empleados(departamento);
+
+-- ---------------------------------------------------------------------
+-- TURNOS / HORARIOS (programacion diaria + marca real)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS turnos_horarios (
+    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    empleado_id             INTEGER NOT NULL REFERENCES empleados(id) ON DELETE CASCADE,
+    fecha                   TEXT NOT NULL,             -- YYYY-MM-DD
+    dia_semana              TEXT,                       -- LUNES..DOMINGO (informativo)
+    hora_entrada_programada TEXT,                       -- HH:MM
+    hora_salida_programada  TEXT,
+    hora_entrada_real       TEXT,
+    hora_salida_real        TEXT,
+    horas_trabajadas        REAL DEFAULT 0,             -- calculado (soporta turnos que cruzan medianoche)
+    tipo_turno              TEXT DEFAULT 'DIARIO' CHECK (tipo_turno IN ('DIARIO','SEMANAL')),
+    es_dia_libre             INTEGER NOT NULL DEFAULT 0, -- 1 = no laboro ese dia
+    foto_entrada             TEXT,                        -- ruta del archivo de evidencia (Reloj de Asistencia)
+    foto_salida              TEXT,
+    lat_entrada              REAL,                        -- coordenada capturada al marcar (geolocalizacion del navegador)
+    lng_entrada              REAL,
+    distancia_entrada_metros REAL,                        -- distancia a la empresa, ya calculada (Haversine)
+    lat_salida               REAL,
+    lng_salida               REAL,
+    distancia_salida_metros  REAL,
+    observaciones           TEXT,
+    created_at              TEXT DEFAULT (datetime('now','localtime')),
+    updated_at              TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(empleado_id, fecha)
+);
+
+CREATE INDEX IF NOT EXISTS idx_turnos_empleado_fecha ON turnos_horarios(empleado_id, fecha);
+CREATE INDEX IF NOT EXISTS idx_turnos_fecha ON turnos_horarios(fecha);
+
+-- ---------------------------------------------------------------------
+-- HORAS EXTRAS SEMANALES (resultado del motor de calculo, por semana)
+-- Replica la hoja "CALCULO HORAS EXTRAS" + "HORAS LPS" del Excel:
+-- horas ordinarias vs jornada legal, y distribucion en franjas horarias
+-- con su respectivo recargo (25%, 50%, 75%, 100%).
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS horas_extras_semanal (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    empleado_id         INTEGER NOT NULL REFERENCES empleados(id) ON DELETE CASCADE,
+    semana_inicio       TEXT NOT NULL,
+    semana_fin          TEXT NOT NULL,
+    horas_totales       REAL NOT NULL DEFAULT 0,   -- suma de horas trabajadas en la semana
+    tipo_jornada         TEXT NOT NULL DEFAULT 'DIURNA',
+    horas_ordinarias     REAL NOT NULL DEFAULT 0,   -- tope legal segun jornada (44/36/42)
+    horas_extras_total   REAL NOT NULL DEFAULT 0,   -- horas_totales - horas_ordinarias (min 0)
+    horas_bucket_25      REAL NOT NULL DEFAULT 0,   -- franja 2:00pm-7:00pm
+    horas_bucket_50      REAL NOT NULL DEFAULT 0,   -- franja 7:00pm-9:00pm
+    horas_bucket_75      REAL NOT NULL DEFAULT 0,   -- franja 6:00pm-6:00am (nocturno)
+    horas_bucket_100     REAL NOT NULL DEFAULT 0,   -- dia feriado/descanso trabajado
+    pago_bucket_25       REAL NOT NULL DEFAULT 0,
+    pago_bucket_50       REAL NOT NULL DEFAULT 0,
+    pago_bucket_75       REAL NOT NULL DEFAULT 0,
+    pago_bucket_100      REAL NOT NULL DEFAULT 0,
+    pago_total_extras    REAL NOT NULL DEFAULT 0,
+    septimo_dia_procede  INTEGER NOT NULL DEFAULT 0, -- 1 si cumplio la semana completa
+    created_at           TEXT DEFAULT (datetime('now','localtime')),
+    UNIQUE(empleado_id, semana_inicio, semana_fin)
+);
+
+CREATE INDEX IF NOT EXISTS idx_hextras_empleado ON horas_extras_semanal(empleado_id);
+
+-- ---------------------------------------------------------------------
+-- PLANILLAS (encabezado de una corrida de nomina)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS planillas (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre              TEXT NOT NULL,               -- ej: "Planilla Semanal 1 al 7 de Junio 2026"
+    empresa_id           INTEGER REFERENCES empresas(id), -- fuente de verdad (usa el modulo Empresas)
+    empresa             TEXT DEFAULT '',              -- se mantiene sincronizado con empresas.nombre, para no romper reportes existentes
+    tipo_periodo        TEXT NOT NULL CHECK (tipo_periodo IN ('SEMANAL','QUINCENAL','MENSUAL')),
+    fecha_inicio        TEXT NOT NULL,
+    fecha_fin           TEXT NOT NULL,
+    estado              TEXT NOT NULL DEFAULT 'BORRADOR' CHECK (estado IN ('BORRADOR','PROCESADA','PAGADA','ANULADA')),
+    total_salarios      REAL DEFAULT 0,
+    total_extras        REAL DEFAULT 0,
+    total_deducciones   REAL DEFAULT 0,
+    total_pagar          REAL DEFAULT 0,
+    created_at          TEXT DEFAULT (datetime('now','localtime')),
+    updated_at          TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_planillas_periodo ON planillas(fecha_inicio, fecha_fin);
+
+-- ---------------------------------------------------------------------
+-- PLANILLA_DETALLE (una fila por empleado dentro de una planilla)
+-- Replica exactamente la hoja "PLANILLA" del Excel:
+-- salario_diario = salario_mensual/30
+-- salario_ordinario = dias_trabajados * salario_diario
+-- septimo_dia_pago = (1 si procede) * salario_diario
+-- salario_total = salario_ordinario + septimo_dia_pago
+-- sal_mas_he = salario_total + horas_extras_pago
+-- subtotal_neto = sal_mas_he - ihss - rap
+-- total_deducciones = prestamos + vales + impuesto_vecinal
+-- total_pagar = subtotal_neto - total_deducciones
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS planilla_detalle (
+    id                      INTEGER PRIMARY KEY AUTOINCREMENT,
+    planilla_id             INTEGER NOT NULL REFERENCES planillas(id) ON DELETE CASCADE,
+    empleado_id             INTEGER NOT NULL REFERENCES empleados(id),
+    salario_mensual         REAL NOT NULL DEFAULT 0,
+    salario_diario          REAL NOT NULL DEFAULT 0,
+    dias_trabajados         REAL NOT NULL DEFAULT 0,
+    septimo_dia_procede     INTEGER NOT NULL DEFAULT 0,
+    salario_ordinario       REAL NOT NULL DEFAULT 0,
+    septimo_dia_pago        REAL NOT NULL DEFAULT 0,
+    salario_total           REAL NOT NULL DEFAULT 0,
+    horas_extras_horas      REAL NOT NULL DEFAULT 0,
+    horas_extras_pago       REAL NOT NULL DEFAULT 0,
+    sal_mas_he              REAL NOT NULL DEFAULT 0,
+    ihss                    REAL NOT NULL DEFAULT 0,
+    rap                     REAL NOT NULL DEFAULT 0,
+    subtotal_neto           REAL NOT NULL DEFAULT 0,
+    prestamos                REAL NOT NULL DEFAULT 0,
+    vales                    REAL NOT NULL DEFAULT 0,
+    impuesto_vecinal         REAL NOT NULL DEFAULT 0,
+    isr                      REAL NOT NULL DEFAULT 0,
+    transporte_dias_11pm        INTEGER NOT NULL DEFAULT 0, -- dias que salio a las 11:00pm (L.100 c/u)
+    transporte_dias_doble_turno INTEGER NOT NULL DEFAULT 0, -- dias de doble turno hasta las 9:00pm (L.50 c/u)
+    transporte                REAL NOT NULL DEFAULT 0,       -- total calculado, se SUMA al total a pagar
+    total_deducciones        REAL NOT NULL DEFAULT 0,
+    total_pagar               REAL NOT NULL DEFAULT 0,
+    observaciones             TEXT,
+    UNIQUE(planilla_id, empleado_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_pdetalle_planilla ON planilla_detalle(planilla_id);
+CREATE INDEX IF NOT EXISTS idx_pdetalle_empleado ON planilla_detalle(empleado_id);
+
+-- ---------------------------------------------------------------------
+-- DEDUCCIONES VARIABLES (prestamos, vales, impuesto vecinal, etc.)
+-- Se registran aqui y se arrastran a la planilla del periodo que
+-- corresponda; asi queda historial de por que se dedujo cada monto.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS deducciones (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    empleado_id     INTEGER NOT NULL REFERENCES empleados(id) ON DELETE CASCADE,
+    tipo            TEXT NOT NULL CHECK (tipo IN ('PRESTAMO','VALE','IMPUESTO_VECINAL','OTRO')),
+    concepto        TEXT,
+    monto           REAL NOT NULL DEFAULT 0,
+    saldo_pendiente REAL NOT NULL DEFAULT 0,     -- para prestamos con abono parcial
+    fecha           TEXT NOT NULL,
+    aplicada        INTEGER NOT NULL DEFAULT 0,   -- 1 si ya se descarto en una planilla
+    planilla_id     INTEGER REFERENCES planillas(id),
+    created_at      TEXT DEFAULT (datetime('now','localtime'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_deducciones_empleado ON deducciones(empleado_id);
+CREATE INDEX IF NOT EXISTS idx_deducciones_aplicada ON deducciones(aplicada);

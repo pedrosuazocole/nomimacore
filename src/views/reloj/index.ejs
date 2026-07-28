@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es-HN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Reloj de Asistencia | NominaCore HN</title>
+
+<!-- PWA: hace que el Reloj se pueda instalar como app aparte, propia -->
+<link rel="manifest" href="/manifest-reloj.json">
+<meta name="theme-color" content="#1B2A4A">
+<link rel="icon" href="/img/icon-reloj-192.png">
+<link rel="apple-touch-icon" href="/img/icon-reloj-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Reloj HN">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/estilos.css">
+<style>
+    body { background: #1B2A4A; min-height: 100vh; }
+    .reloj-hora { font-variant-numeric: tabular-nums; }
+    .tarjeta-empleado {
+        background: #fff; border-radius: 1rem; padding: 1.1rem 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,.15); text-align: left;
+        width: 100%; display: flex; align-items: center; justify-content: space-between;
+        gap: .75rem; transition: transform .1s ease;
+    }
+    .tarjeta-empleado:active { transform: scale(0.98); }
+    .btn-marcar {
+        display: block; width: 100%; padding: 1.1rem; border-radius: .9rem;
+        font-weight: 800; font-size: 1.15rem; color: #fff; text-align: center;
+        transition: filter .1s ease;
+    }
+    .btn-marcar:active { filter: brightness(0.9); }
+    .btn-entrada { background: linear-gradient(135deg, #0D9488, #0b7a70); }
+    .btn-salida { background: linear-gradient(135deg, #D97A2C, #b8621f); }
+    .btn-marcar:disabled { background: #cbd5e1; color: #64748b; }
+    .btn-instalar-reloj {
+        display: none; align-items: center; justify-content: center; gap: .5rem;
+        background: rgba(255,255,255,.12); color: #fff; border: 1px solid rgba(255,255,255,.25);
+        font-weight: 700; font-size: .85rem; padding: .55rem 1.1rem; border-radius: 999px;
+        margin: 0 auto 1rem; width: fit-content;
+    }
+</style>
+</head>
+<body class="px-4 py-6">
+
+<div class="max-w-md mx-auto">
+    <div class="text-center mb-6">
+        <span class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#0D9488] text-2xl mb-2">⏱️</span>
+        <h1 class="text-2xl font-bold text-white">Reloj de Asistencia</h1>
+        <p class="text-slate-300 text-sm">NominaCore HN</p>
+        <p id="relojEnVivo" class="reloj-hora text-3xl font-bold text-white mt-3">--:--:--</p>
+        <p id="fechaHoy" class="text-slate-300 text-sm"></p>
+    </div>
+
+    <button id="btnInstalarReloj" class="btn-instalar-reloj">
+        <span>⬇️</span><span>Instalar como app</span>
+    </button>
+
+    <!-- ============ LISTA DE EMPLEADOS ============ -->
+    <div id="listaEmpleados" class="flex flex-col gap-3">
+        <% empleados.forEach(e => { %>
+            <button type="button" class="tarjeta-empleado boton-empleado"
+                data-id="<%= e.id %>" data-nombre="<%= e.nombre_completo %>"
+                data-entrada="<%= e.yaMarcoEntrada ? '1' : '0' %>" data-hora-entrada="<%= e.horaEntrada || '' %>"
+                data-salida="<%= e.yaMarcoSalida ? '1' : '0' %>" data-hora-salida="<%= e.horaSalida || '' %>"
+                data-turno-inicio="<%= e.turnoInicio || '' %>" data-turno-fin="<%= e.turnoFin || '' %>">
+                <span class="font-semibold text-[#1B2A4A]"><%= e.nombre_completo %></span>
+                <% if (e.yaMarcoSalida) { %>
+                    <span class="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500">Turno completo</span>
+                <% } else if (e.yaMarcoEntrada) { %>
+                    <span class="text-xs px-2 py-1 rounded-full bg-teal-100 text-teal-700">Entrada: <%= e.horaEntrada %></span>
+                <% } else { %>
+                    <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700">Sin marcar</span>
+                <% } %>
+            </button>
+        <% }) %>
+        <% if (empleados.length === 0) { %>
+            <p class="text-center text-slate-300 text-sm py-6">No hay empleados activos registrados.</p>
+        <% } %>
+    </div>
+
+    <!-- ============ PANTALLA DE MARCAJE (aparece al elegir un empleado) ============ -->
+    <div id="pantallaMarcaje" class="hidden">
+        <button type="button" id="btnVolver" class="text-slate-300 text-sm mb-4">&larr; Elegir otro empleado</button>
+        <div class="bg-white rounded-2xl p-6 text-center mb-4">
+            <p class="text-sm text-slate-500">Hola,</p>
+            <h2 id="nombreSeleccionado" class="text-xl font-bold text-[#1B2A4A] mb-4"></h2>
+            <p id="estadoSeleccionado" class="text-sm text-slate-600 mb-4"></p>
+
+            <!-- Panel de camara en vivo (aparece al tocar Marcar Entrada/Salida) -->
+            <div id="panelCamara" class="hidden mb-4">
+                <div class="relative rounded-xl overflow-hidden bg-black mb-3" style="aspect-ratio: 1/1;">
+                    <video id="videoCamara" autoplay playsinline muted class="w-full h-full object-cover" style="transform: scaleX(-1);"></video>
+                </div>
+                <p id="mensajeCamara" class="text-xs text-red-500 mb-2"></p>
+                <div class="flex gap-2">
+                    <button type="button" id="btnCancelarCamara" class="btn btn-outline flex-1">✕ Cancelar</button>
+                    <button type="button" id="btnCapturar" class="btn btn-primary flex-1">📸 Capturar</button>
+                </div>
+            </div>
+
+            <!-- Previsualizacion de la foto recien capturada (antes de confirmar) -->
+            <div id="previsualizacionFoto" class="hidden mb-4">
+                <img id="imgPreview" class="w-32 h-32 object-cover rounded-xl mx-auto border-4 border-teal-200 mb-3" alt="Foto tomada">
+                <div class="flex gap-2">
+                    <button type="button" id="btnRepetirFoto" class="btn btn-outline flex-1">🔄 Repetir</button>
+                    <button type="button" id="btnConfirmarFoto" class="btn btn-primary flex-1">✅ Confirmar</button>
+                </div>
+            </div>
+
+            <div id="botonesMarcaje" class="flex flex-col gap-3">
+                <button type="button" id="btnEntrada" class="btn-marcar btn-entrada">✅ Marcar Entrada</button>
+                <button type="button" id="btnSalida" class="btn-marcar btn-salida">🏁 Marcar Salida</button>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">📷 Se te va a abrir la camara para tomarte una foto de evidencia en el momento — no se puede subir una foto guardada.</p>
+        </div>
+
+        <!-- Canvas oculto: aqui se "congela" el fotograma de la camara al
+             capturar, y de ahi se convierte a la foto que se sube. -->
+        <canvas id="canvasCaptura" class="hidden"></canvas>
+
+        <div class="bg-white rounded-2xl p-5 mb-4">
+            <p class="text-sm font-semibold text-[#1B2A4A] mb-1">¿Cual es tu turno hoy?</p>
+            <p id="turnoActualTexto" class="text-xs text-slate-500 mb-3">Aun no has elegido turno hoy.</p>
+            <div class="grid grid-cols-3 gap-2">
+                <button type="button" class="btn-turno-reloj text-xs px-2 py-3 rounded-lg border-2 border-slate-200 hover:border-[#0D9488]" data-inicio="06:00" data-fin="14:00">🌅<br>6am-2pm</button>
+                <button type="button" class="btn-turno-reloj text-xs px-2 py-3 rounded-lg border-2 border-slate-200 hover:border-[#0D9488]" data-inicio="14:00" data-fin="21:00">☀️<br>2pm-9pm</button>
+                <button type="button" class="btn-turno-reloj text-xs px-2 py-3 rounded-lg border-2 border-slate-200 hover:border-[#0D9488]" data-inicio="21:00" data-fin="06:00">🌙<br>9pm-6am</button>
+            </div>
+        </div>
+        <p id="mensajeResultado" class="text-center text-sm font-medium"></p>
+    </div>
+</div>
+
+<script>
+let empleadoActual = null;
+let tipoMarcajePendiente = null;
+let fotoCapturada = null;
+
+// Reloj en vivo (solo visual; la hora que realmente queda guardada la
+// calcula el servidor, esto es nada mas para que el empleado la vea).
+function actualizarReloj() {
+    const ahora = new Date();
+    document.getElementById('relojEnVivo').textContent = ahora.toLocaleTimeString('es-HN', { hour12: true });
+    document.getElementById('fechaHoy').textContent = ahora.toLocaleDateString('es-HN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+
+document.querySelectorAll('.boton-empleado').forEach(btn => {
+    btn.addEventListener('click', () => {
+        empleadoActual = {
+            id: btn.dataset.id,
+            nombre: btn.dataset.nombre,
+            entrada: btn.dataset.entrada === '1',
+            horaEntrada: btn.dataset.horaEntrada,
+            salida: btn.dataset.salida === '1',
+            horaSalida: btn.dataset.horaSalida,
+            turnoInicio: btn.dataset.turnoInicio,
+            turnoFin: btn.dataset.turnoFin
+        };
+        mostrarPantallaMarcaje();
+    });
+});
+
+function mostrarPantallaMarcaje() {
+    document.getElementById('listaEmpleados').classList.add('hidden');
+    document.getElementById('pantallaMarcaje').classList.remove('hidden');
+    document.getElementById('nombreSeleccionado').textContent = empleadoActual.nombre;
+    document.getElementById('mensajeResultado').textContent = '';
+    ocultarPrevisualizacion();
+    actualizarTextoTurno();
+
+    const btnEntrada = document.getElementById('btnEntrada');
+    const btnSalida = document.getElementById('btnSalida');
+    const estado = document.getElementById('estadoSeleccionado');
+
+    if (empleadoActual.salida) {
+        estado.textContent = `Turno completo hoy: ${empleadoActual.horaEntrada} a ${empleadoActual.horaSalida}.`;
+        btnEntrada.disabled = true;
+        btnSalida.disabled = true;
+    } else if (empleadoActual.entrada) {
+        estado.textContent = `Ya marcaste entrada a las ${empleadoActual.horaEntrada}. Falta marcar salida.`;
+        btnEntrada.disabled = true;
+        btnSalida.disabled = false;
+    } else {
+        estado.textContent = 'Aun no has marcado entrada hoy.';
+        btnEntrada.disabled = false;
+        btnSalida.disabled = true;
+    }
+}
+
+function actualizarTextoTurno() {
+    const texto = document.getElementById('turnoActualTexto');
+    if (empleadoActual.turnoInicio && empleadoActual.turnoFin) {
+        texto.textContent = `Turno elegido hoy: ${empleadoActual.turnoInicio} a ${empleadoActual.turnoFin}. Puedes cambiarlo tocando otro.`;
+    } else {
+        texto.textContent = 'Aun no has elegido turno hoy.';
+    }
+}
+
+document.querySelectorAll('.btn-turno-reloj').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const inicio = btn.dataset.inicio;
+        const fin = btn.dataset.fin;
+        document.querySelectorAll('.btn-turno-reloj').forEach(b => b.classList.remove('border-[#0D9488]', 'bg-teal-50'));
+        btn.classList.add('border-[#0D9488]', 'bg-teal-50');
+        try {
+            const resp = await fetch('/reloj/turno', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ empleado_id: empleadoActual.id, inicio, fin })
+            });
+            const data = await resp.json();
+            if (data.ok) {
+                empleadoActual.turnoInicio = inicio;
+                empleadoActual.turnoFin = fin;
+                actualizarTextoTurno();
+            }
+        } catch (err) {
+            document.getElementById('turnoActualTexto').textContent = 'No se pudo guardar el turno, intenta de nuevo.';
+        }
+    });
+});
+
+document.getElementById('btnVolver').addEventListener('click', () => {
+    location.reload();
+});
+
+// ============ CAMARA EN VIVO (getUserMedia) ============
+// A diferencia de un <input type="file" capture>, esto NUNCA le pide
+// un archivo al telefono — solo lee lo que la camara esta viendo en
+// ese instante, asi que es imposible subir una foto vieja de galeria.
+let streamCamara = null;
+
+async function pedirFoto(tipo) {
+    tipoMarcajePendiente = tipo;
+    document.getElementById('botonesMarcaje').classList.add('hidden');
+    document.getElementById('mensajeCamara').textContent = '';
+    document.getElementById('panelCamara').classList.remove('hidden');
+
+    try {
+        streamCamara = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 } },
+            audio: false
+        });
+        document.getElementById('videoCamara').srcObject = streamCamara;
+    } catch (err) {
+        document.getElementById('mensajeCamara').textContent =
+            'No se pudo abrir la camara. Verifica que le diste permiso de camara a este sitio en tu navegador, y que tu telefono tenga camara disponible.';
+    }
+}
+
+function detenerCamara() {
+    if (streamCamara) {
+        streamCamara.getTracks().forEach(track => track.stop());
+        streamCamara = null;
+    }
+}
+
+document.getElementById('btnCancelarCamara').addEventListener('click', () => {
+    detenerCamara();
+    document.getElementById('panelCamara').classList.add('hidden');
+    document.getElementById('botonesMarcaje').classList.remove('hidden');
+    tipoMarcajePendiente = null;
+});
+
+document.getElementById('btnCapturar').addEventListener('click', () => {
+    const video = document.getElementById('videoCamara');
+    const canvas = document.getElementById('canvasCaptura');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    // La imagen se espeja horizontalmente porque el <video> se muestra
+    // en espejo (como una selfie normal); asi la foto final tambien
+    // queda "derecha" en vez de al reves.
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+        fotoCapturada = blob;
+        document.getElementById('imgPreview').src = URL.createObjectURL(blob);
+        detenerCamara();
+        document.getElementById('panelCamara').classList.add('hidden');
+        mostrarPrevisualizacion();
+    }, 'image/jpeg', 0.85);
+});
+
+document.getElementById('btnRepetirFoto').addEventListener('click', () => {
+    ocultarPrevisualizacionSinReset();
+    pedirFoto(tipoMarcajePendiente);
+});
+
+function mostrarPrevisualizacion() {
+    document.getElementById('previsualizacionFoto').classList.remove('hidden');
+    document.getElementById('botonesMarcaje').classList.add('hidden');
+}
+function ocultarPrevisualizacionSinReset() {
+    document.getElementById('previsualizacionFoto').classList.add('hidden');
+}
+function ocultarPrevisualizacion() {
+    detenerCamara();
+    document.getElementById('panelCamara').classList.add('hidden');
+    document.getElementById('previsualizacionFoto').classList.add('hidden');
+    document.getElementById('botonesMarcaje').classList.remove('hidden');
+    fotoCapturada = null;
+    tipoMarcajePendiente = null;
+}
+document.getElementById('btnConfirmarFoto').addEventListener('click', () => {
+    marcar(tipoMarcajePendiente);
+});
+
+// Intenta obtener la ubicacion GPS del navegador. Si el empleado no
+// dio permiso, el dispositivo no tiene GPS, o tarda demasiado (8s),
+// se resuelve con null en vez de fallar — la marca de asistencia NUNCA
+// se bloquea por esto, la foto ya es la evidencia principal; la
+// ubicacion es un dato adicional cuando esta disponible.
+function obtenerUbicacion() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) return resolve(null);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
+    });
+}
+
+async function marcar(tipo) {
+    const mensaje = document.getElementById('mensajeResultado');
+    mensaje.textContent = 'Obteniendo tu ubicacion...';
+    mensaje.className = 'text-center text-sm font-medium text-slate-500';
+    try {
+        const ubicacion = await obtenerUbicacion();
+
+        mensaje.textContent = 'Guardando...';
+        const formData = new FormData();
+        formData.append('empleado_id', empleadoActual.id);
+        formData.append('tipo', tipo);
+        if (fotoCapturada) formData.append('foto', fotoCapturada, 'evidencia.jpg');
+        if (ubicacion) {
+            formData.append('lat', ubicacion.lat);
+            formData.append('lng', ubicacion.lng);
+        }
+
+        const resp = await fetch('/reloj/marcar', { method: 'POST', body: formData });
+        const data = await resp.json();
+        mensaje.textContent = data.mensaje;
+        mensaje.className = 'text-center text-sm font-medium ' + (data.ok ? 'text-emerald-300' : 'text-amber-300');
+        if (data.ok) {
+            setTimeout(() => location.reload(), 1800);
+        } else {
+            ocultarPrevisualizacion();
+        }
+    } catch (err) {
+        mensaje.textContent = 'No se pudo conectar. Intenta de nuevo.';
+        mensaje.className = 'text-center text-sm font-medium text-red-300';
+        ocultarPrevisualizacion();
+    }
+}
+
+document.getElementById('btnEntrada').addEventListener('click', () => pedirFoto('entrada'));
+document.getElementById('btnSalida').addEventListener('click', () => pedirFoto('salida'));
+
+// Apagar la camara si el empleado cierra la pestaña o navega fuera con
+// la camara todavia abierta (evita que quede prendida sin querer).
+window.addEventListener('beforeunload', detenerCamara);
+
+// ============ PWA: Instalar el Reloj como app aparte ============
+let promptDeInstalacionReloj = null;
+const btnInstalarReloj = document.getElementById('btnInstalarReloj');
+
+window.addEventListener('beforeinstallprompt', (evento) => {
+    evento.preventDefault();
+    promptDeInstalacionReloj = evento;
+    btnInstalarReloj.style.display = 'flex';
+});
+
+btnInstalarReloj?.addEventListener('click', async () => {
+    if (!promptDeInstalacionReloj) return;
+    promptDeInstalacionReloj.prompt();
+    await promptDeInstalacionReloj.userChoice;
+    promptDeInstalacionReloj = null;
+    btnInstalarReloj.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+    btnInstalarReloj.style.display = 'none';
+});
+
+// iPhone/iPad (Safari) no dispara "beforeinstallprompt" — se muestra el
+// boton igual, con instrucciones manuales (unica forma de instalar en iOS).
+const esIOSReloj = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const yaInstaladaReloj = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+if (esIOSReloj && !yaInstaladaReloj) {
+    btnInstalarReloj.style.display = 'flex';
+    btnInstalarReloj.addEventListener('click', () => {
+        alert('Para instalar el Reloj en tu iPhone:\n\n1. Toca el boton de Compartir (el cuadro con la flecha hacia arriba)\n2. Elegi "Agregar a inicio"\n3. Toca "Agregar"');
+    });
+}
+
+// Registra el mismo sw.js pero con scope propio "/reloj" — asi el
+// Reloj es instalable como su propia app, separada de NominaCore HN,
+// sin pisarse entre si aunque compartan el mismo archivo de Service Worker.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/reloj' }).catch((err) => {
+            console.warn('No se pudo registrar el Service Worker del Reloj:', err);
+        });
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<div class="mb-5 no-print">
+    <a href="/reportes" class="text-sm text-[#0D9488]">&larr; Volver a Reportes</a>
+</div>
+
+<form method="GET" class="card mb-5 grid grid-cols-1 sm:grid-cols-4 gap-3 no-print">
+    <div class="sm:col-span-2">
+        <label class="block text-xs font-medium mb-1">Empleado *</label>
+        <select class="input" name="empleado_id" required>
+            <option value="">Selecciona un empleado...</option>
+            <% empleados.forEach(e => { %><option value="<%= e.id %>" <%= String(filtros.empleado_id) === String(e.id) ? 'selected' : '' %>><%= e.nombre_completo %></option><% }) %>
+        </select>
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Desde</label>
+        <input class="input" type="date" name="fecha_inicio" value="<%= filtros.fecha_inicio %>">
+    </div>
+    <div>
+        <label class="block text-xs font-medium mb-1">Hasta</label>
+        <input class="input" type="date" name="fecha_fin" value="<%= filtros.fecha_fin %>">
+    </div>
+    <div class="sm:col-span-4">
+        <button class="btn btn-secondary">Consultar</button>
+    </div>
+</form>
+
+<% if (!empleadoSel) { %>
+    <div class="reporte-vacio">
+        <div class="reporte-vacio__icon">🧑‍💼</div>
+        <p class="font-medium text-slate-600">Selecciona un empleado y un rango de fechas para ver su historial.</p>
+    </div>
+<% } else { %>
+
+<div class="flex flex-wrap gap-2 mb-5 no-print">
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Imprimir</button>
+    <a href="?<%= new URLSearchParams({...filtros, export: 'xlsx'}).toString() %>" class="btn btn-accent">📊 Exportar a Excel</a>
+</div>
+
+<%- include('../partials/reporte_header', {
+    tituloReporte: 'Historial de Empleado',
+    subtitulo: `${empleadoSel.nombre_completo} — ${filtros.fecha_inicio} al ${filtros.fecha_fin}`
+}) %>
+
+<div class="card mb-5 avoid-break">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div>
+            <h2 class="text-lg font-bold text-[#1B2A4A]"><%= empleadoSel.nombre_completo %></h2>
+            <p class="text-sm text-slate-500"><%= empleadoSel.departamento %> · <%= empleadoSel.cargo || 'Sin cargo asignado' %> · Codigo: <%= empleadoSel.codigo_contable || '—' %></p>
+        </div>
+    </div>
+</div>
+
+<% if (filas.length === 0) { %>
+    <div class="reporte-vacio avoid-break">
+        <div class="reporte-vacio__icon">📭</div>
+        <p class="font-medium text-slate-600">Este empleado no tiene planillas procesadas en el rango seleccionado.</p>
+    </div>
+<% } else { %>
+
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+    <div class="stat-card stat-card--navy avoid-break">
+        <span class="stat-card__icon">💰</span>
+        <div><p class="stat-card__value">L. <%= totales.salario_ordinario.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Salario Ordinario</p></div>
+    </div>
+    <div class="stat-card stat-card--orange avoid-break">
+        <span class="stat-card__icon">⏱️</span>
+        <div><p class="stat-card__value">L. <%= totales.horas_extras_pago.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Horas Extra</p></div>
+    </div>
+    <div class="stat-card stat-card--red avoid-break">
+        <span class="stat-card__icon">➖</span>
+        <div><p class="stat-card__value">L. <%= totales.total_deducciones.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Deducciones</p></div>
+    </div>
+    <div class="stat-card stat-card--total avoid-break">
+        <span class="stat-card__icon">✅</span>
+        <div><p class="stat-card__value">L. <%= totales.total_pagar.toLocaleString('es-HN',{minimumFractionDigits:2}) %></p><p class="stat-card__label">Total Pagado</p></div>
+    </div>
+</div>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead><tr><th>Planilla</th><th>Tipo</th><th>Fechas</th><th>Sal. Ordinario</th><th>7mo Dia</th><th>H. Extra</th><th>IHSS</th><th>RAP</th><th>Deducciones</th><th>Total Pagado</th></tr></thead>
+        <tbody>
+        <% filas.forEach(r => { %>
+            <tr class="avoid-break">
+                <td class="font-medium"><%= r.planilla_nombre %></td>
+                <td><%= r.tipo_periodo %></td>
+                <td class="whitespace-nowrap"><%= r.fecha_inicio %> al <%= r.fecha_fin %></td>
+                <td>L. <%= Number(r.salario_ordinario).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.septimo_dia_pago).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.horas_extras_pago).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.ihss).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.rap).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= Number(r.total_deducciones).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td class="font-bold">L. <%= Number(r.total_pagar).toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+        <tfoot>
+            <tr class="font-bold bg-slate-50">
+                <td colspan="3">TOTALES</td>
+                <td>L. <%= totales.salario_ordinario.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.septimo_dia_pago.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.horas_extras_pago.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.ihss.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.rap.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.total_deducciones.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+                <td>L. <%= totales.total_pagar.toLocaleString('es-HN',{minimumFractionDigits:2}) %></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+<% } %>
+
+<%- include('../partials/reporte_footer') %>
+<% } %>

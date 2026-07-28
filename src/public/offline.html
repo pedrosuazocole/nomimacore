@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es-HN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sin conexion | NominaCore HN</title>
+<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+        font-family: 'Segoe UI', system-ui, sans-serif; background: #1B2A4A; color: #fff;
+        min-height: 100vh; display:flex; align-items:center; justify-content:center; text-align:center; padding: 2rem;
+    }
+    .icono { font-size: 4rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.5rem; margin-bottom: .75rem; }
+    p { color: #cbd5e1; max-width: 26rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    button {
+        background: #0D9488; color: #fff; border:none; font-weight:700; font-size: 1rem;
+        padding: .8rem 1.8rem; border-radius: .7rem; cursor: pointer;
+    }
+</style>
+</head>
+<body>
+    <div>
+        <div class="icono">📡</div>
+        <h1>Sin conexion a internet</h1>
+        <p>NominaCore HN necesita conexion para mostrar informacion actualizada de planillas y empleados. Verifica tu conexion e intenta de nuevo.</p>
+        <button onclick="location.reload()">Reintentar</button>
+    </div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<%
+// Variables esperadas: tituloReporte, subtitulo (texto del rango/filtros aplicados)
+const fechaGeneracion = new Date().toLocaleString('es-HN', { dateStyle: 'medium', timeStyle: 'short' });
+%>
+<style>
+    /* Este @page SOLO aplica a paginas que incluyen este partial (los 8
+       reportes) — no afecta la impresion de ninguna otra pantalla de la
+       app, porque solo esas paginas cargan este <style>. Sus tablas
+       tienen muchas columnas, asi que horizontal aprovecha mejor el
+       papel que vertical. */
+    @media print {
+        @page { size: landscape; margin: 12mm; }
+    }
+</style>
+<div class="reporte-letterhead avoid-break">
+    <div class="reporte-letterhead__top">
+        <div class="reporte-letterhead__brand">
+            <div>
+                <p class="reporte-letterhead__app">NominaCore<span class="reporte-letterhead__badge">HN</span></p>
+                <p class="reporte-letterhead__tagline"><%= (appConfig && appConfig.empresa_nombre) || 'Sistema de Gestion de Planillas y Horarios' %></p>
+            </div>
+        </div>
+        <div class="reporte-letterhead__meta">
+            <p>Generado: <%= fechaGeneracion %></p>
+            <% if (typeof usuarioActual !== 'undefined' && usuarioActual) { %>
+                <p>Usuario: <%= usuarioActual.nombre %></p>
+            <% } %>
+            <p>Sistema: Metric Solutions &amp; POS</p>
+        </div>
+    </div>
+    <div class="reporte-letterhead__divider"></div>
+    <div class="reporte-letterhead__titulo">
+        <h1><%= tituloReporte %></h1>
+        <% if (typeof subtitulo !== 'undefined' && subtitulo) { %>
+            <span class="reporte-letterhead__subtitulo">Periodo: <%= subtitulo %></span>
+        <% } %>
+    </div>
+</div>

@@ -1,0 +1,41 @@
+<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+    <h1 class="text-2xl font-bold text-[#1B2A4A]">Empresas</h1>
+    <a href="/empresas/nuevo" class="btn btn-primary">+ Nueva Empresa</a>
+</div>
+
+<div class="card table-scroll">
+    <table class="table-nomina">
+        <thead>
+            <tr><th>Nombre</th><th>RTN</th><th>Direccion</th><th>Telefono</th><th>Empleados Activos</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+        <% if (empresas.length === 0) { %>
+            <tr><td colspan="7" class="text-center text-slate-500 py-6">No hay empresas registradas todavia.</td></tr>
+        <% } %>
+        <% empresas.forEach(e => { %>
+            <tr>
+                <td class="font-medium"><%= e.nombre %></td>
+                <td><%= e.rtn || '—' %></td>
+                <td><%= e.direccion || '—' %></td>
+                <td><%= e.telefono || '—' %></td>
+                <td>
+                    <a href="/empleados?empresa_id=<%= e.id %>" class="text-[#0D9488] font-semibold"><%= e.totalEmpleados %></a>
+                </td>
+                <td>
+                    <span class="text-xs px-2 py-1 rounded-full <%= e.estado === 'ACTIVA' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' %>">
+                        <%= e.estado %>
+                    </span>
+                </td>
+                <td class="whitespace-nowrap">
+                    <a href="/empresas/<%= e.id %>/editar" class="text-[#0D9488] font-medium mr-3">Editar</a>
+                    <% if (e.estado === 'ACTIVA') { %>
+                    <form method="POST" action="/empresas/<%= e.id %>?_method=DELETE" class="inline" onsubmit="return confirm('¿Dar de baja esta empresa? Los empleados que la tengan asignada NO se veran afectados.');">
+                        <button class="text-red-600 font-medium">Baja</button>
+                    </form>
+                    <% } %>
+                </td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,294 @@
+/* =====================================================================
+   NominaCore HN — estilos globales
+   Tailwind (CDN) cubre la mayoria; aqui van clases reutilizables y
+   reglas de impresion (@media print) para reportes tipo carta/ticket.
+   ===================================================================== */
+
+.nav-link {
+    padding: 0.5rem 0.9rem;
+    border-radius: 0.5rem;
+    color: #e2e8f0;
+    transition: background-color .15s ease;
+}
+.nav-link:hover { background-color: rgba(255,255,255,.08); }
+.nav-active { background-color: #0D9488; color: #fff; }
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem 1.1rem;
+    border-radius: .6rem;
+    font-weight: 600;
+    font-size: .875rem;
+    transition: filter .15s ease;
+}
+.btn:hover { filter: brightness(0.92); }
+.btn-primary { background-color: #0D9488; color: #fff; }
+.btn-secondary { background-color: #1B2A4A; color: #fff; }
+.btn-accent { background-color: #D97A2C; color: #fff; }
+.btn-outline { background-color: #fff; color: #1B2A4A; border: 1px solid #cbd5e1; }
+.btn-danger { background-color: #dc2626; color: #fff; }
+
+.card {
+    background: #fff;
+    border-radius: 0.9rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    padding: 1.25rem;
+}
+
+.input, select.input, textarea.input {
+    width: 100%;
+    padding: .55rem .75rem;
+    border-radius: .5rem;
+    border: 1px solid #cbd5e1;
+    font-size: 16px; /* evita el zoom automatico de iOS Safari al enfocar */
+}
+@media (min-width: 768px) {
+    .input, select.input, textarea.input { font-size: .9rem; }
+}
+.input:focus { outline: 2px solid #0D9488; outline-offset: 1px; }
+
+table.table-nomina { width: 100%; border-collapse: collapse; font-size: .85rem; }
+table.table-nomina th {
+    background: #1B2A4A; color: #fff; text-align: left;
+    padding: .6rem .7rem; white-space: nowrap;
+}
+table.table-nomina td { padding: .5rem .7rem; border-bottom: 1px solid #e2e8f0; }
+table.table-nomina tbody tr:hover { background: #f8fafc; }
+table.table-nomina tbody tr:nth-child(even) { background: #fafbfc; }
+table.table-nomina tfoot tr { border-top: 2px solid #1B2A4A; }
+
+/* =====================================================================
+   MEMBRETE DE REPORTES (letterhead) — usado en /reportes/*
+   ===================================================================== */
+.reporte-letterhead {
+    background: #fff;
+    border-radius: 0.9rem;
+    padding: 1.75rem 2rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+.reporte-letterhead__top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: .75rem;
+}
+.reporte-letterhead__brand { display: flex; align-items: center; gap: .65rem; }
+.reporte-letterhead__app {
+    font-weight: 800; color: #0f172a; font-size: 1.9rem; line-height: 1.1;
+    letter-spacing: -.01em;
+}
+.reporte-letterhead__badge {
+    display: inline-block; vertical-align: super; margin-left: .35rem;
+    background: #2563eb; color: #fff; font-size: .62rem; font-weight: 800;
+    padding: .18rem .42rem; border-radius: .4rem; letter-spacing: .02em;
+}
+.reporte-letterhead__tagline { font-size: 1rem; color: #64748b; margin-top: .15rem; }
+.reporte-letterhead__meta { text-align: right; font-size: .8rem; color: #64748b; line-height: 1.6; }
+.reporte-letterhead__divider { border-top: 1px dashed #cbd5e1; margin: 1.25rem 0 1.5rem; }
+.reporte-letterhead__titulo { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .75rem; }
+.reporte-letterhead__titulo h1 { font-size: 1.6rem; font-weight: 800; color: #0f172a; }
+.reporte-letterhead__subtitulo {
+    display: inline-flex; align-items: center;
+    font-size: .85rem; color: #1d4ed8; background: #eff6ff;
+    border: 1px solid #bfdbfe; padding: .45rem 1rem; border-radius: 999px;
+    font-weight: 700; white-space: nowrap;
+}
+
+/* Tarjetas de estadisticas con acento de color e icono (estilo original,
+   se mantiene tal cual para no afectar los demas reportes) */
+.stat-card {
+    background: #fff; border-radius: .8rem; padding: .9rem 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.07);
+    border-left: 4px solid #cbd5e1;
+    display: flex; align-items: center; gap: .7rem;
+}
+.stat-card__icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+.stat-card__value { font-size: 1.15rem; font-weight: 800; color: #1B2A4A; line-height: 1.15; }
+.stat-card__label { font-size: .7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; }
+.stat-card--teal { border-left-color: #0D9488; }
+.stat-card--teal .stat-card__value { color: #0D9488; }
+.stat-card--orange { border-left-color: #D97A2C; }
+.stat-card--orange .stat-card__value { color: #D97A2C; }
+.stat-card--red { border-left-color: #dc2626; }
+.stat-card--red .stat-card__value { color: #dc2626; }
+.stat-card--purple { border-left-color: #9333ea; }
+.stat-card--purple .stat-card__value { color: #9333ea; }
+.stat-card--navy { border-left-color: #1B2A4A; }
+.stat-card--total { background: linear-gradient(135deg, #0D9488, #0b7a70); border-left: none; }
+.stat-card--total .stat-card__value, .stat-card--total .stat-card__label { color: #fff; }
+.stat-card--total .stat-card__label { color: #ccfbf1; }
+
+/* Tarjetas de estadisticas v2: barra de color arriba, valor grande y
+   oscuro (sin colorear), usadas en el nuevo formato de Resumen de
+   Planillas. */
+.stat-card-v2 {
+    background: #fff; border: 1px solid #e2e8f0; border-radius: .8rem;
+    overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.stat-card-v2__bar { height: 4px; width: 100%; }
+.stat-card-v2__bar--azul { background: #2563eb; }
+.stat-card-v2__bar--naranja { background: #f59e0b; }
+.stat-card-v2__bar--rojo { background: #ef4444; }
+.stat-card-v2__bar--verde { background: #10b981; }
+.stat-card-v2__body { padding: 1rem 1.1rem; }
+.stat-card-v2__label {
+    font-size: .7rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: #64748b; margin-bottom: .4rem;
+}
+.stat-card-v2__value { font-size: 1.55rem; font-weight: 800; color: #0f172a; line-height: 1.1; }
+
+/* Estado vacio (estilo original) */
+.reporte-vacio {
+    text-align: center; padding: 3rem 1.5rem; color: #94a3b8;
+    background: #fff; border-radius: .9rem; box-shadow: 0 1px 3px rgba(0,0,0,.07);
+}
+.reporte-vacio__icon { font-size: 2.5rem; margin-bottom: .5rem; }
+
+/* Estado vacio v2: caja punteada con icono en circulo, usada en el
+   nuevo formato de Resumen de Planillas. */
+.reporte-vacio-v2 {
+    text-align: center; padding: 3.5rem 1.5rem;
+    background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: .9rem;
+}
+.reporte-vacio-v2__icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 4rem; height: 4rem; border-radius: 999px; background: #e2e8f0;
+    font-size: 1.75rem; margin-bottom: 1.1rem; color: #64748b;
+}
+.reporte-vacio-v2__titulo { font-size: 1.05rem; font-weight: 800; color: #0f172a; margin-bottom: .5rem; }
+.reporte-vacio-v2__texto { font-size: .85rem; color: #64748b; line-height: 1.6; max-width: 30rem; margin: 0 auto; }
+
+.reporte-footer {
+    margin-top: 1.5rem; padding-top: .9rem; border-top: 1px solid #e2e8f0;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+    font-size: .7rem; color: #94a3b8;
+}
+.reporte-footer strong { color: #0D9488; }
+
+/* Tarjetas con insignia de icono de color (usadas en Marcas de
+   Asistencia). El icono va en un cuadro de color solido, con la
+   etiqueta y el valor a la par en vez de debajo. */
+.stat-card-icon {
+    display: flex; align-items: center; gap: .9rem;
+    background: #f8fafc; border: 1px solid #e2e8f0; border-radius: .9rem;
+    padding: 1rem 1.2rem;
+}
+.stat-card-icon__badge {
+    width: 2.75rem; height: 2.75rem; border-radius: .7rem; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; color: #fff;
+}
+.stat-card-icon__badge--navy { background: #1B2A4A; }
+.stat-card-icon__badge--naranja { background: #D97A2C; }
+.stat-card-icon__badge--teal { background: #0D9488; }
+.stat-card-icon__badge--morado { background: #9333ea; }
+.stat-card-icon__label { font-size: .75rem; color: #64748b; font-weight: 600; }
+.stat-card-icon__value { font-size: 1.5rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
+
+/* Foto de evidencia enmarcada con etiqueta (Marcas de Asistencia) */
+.foto-evidencia-card {
+    display: inline-block; text-align: center; background: #1B2A4A;
+    border-radius: .6rem; padding: .3rem .35rem .35rem;
+}
+.foto-evidencia-card__label {
+    color: #fff; font-size: .58rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .03em; margin-bottom: .25rem;
+}
+.foto-evidencia-card__img {
+    width: 52px; height: 52px; object-fit: cover; border-radius: .4rem;
+    border: 2px solid #fff; display: block;
+}
+
+/* Fila de total destacada, con el valor final en una pildora de color */
+.fila-total-destacada td {
+    background: #1B2A4A !important; color: #fff !important;
+    font-weight: 800; padding-top: .8rem; padding-bottom: .8rem;
+}
+.fila-total-destacada .pildora-total {
+    display: inline-block; background: #D97A2C; color: #fff;
+    padding: .35rem 1rem; border-radius: 999px; font-weight: 800;
+}
+@media print {
+    .stat-card-icon { background: #fff; }
+    .fila-total-destacada td { background: #1B2A4A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fila-total-destacada .pildora-total { background: #D97A2C !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* Responsive: tablas con scroll horizontal en movil/tablet */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* =====================================================================
+   IMPRESION
+   ===================================================================== */
+@media print {
+    .no-print { display: none !important; }
+    body { background: #fff !important; }
+    .print-page {
+        width: 100%;
+        margin: 0;
+        box-shadow: none !important;
+    }
+    .print-ticket { width: 80mm; font-size: 10px; }
+    .print-carta { width: 100%; font-size: 12px; }
+    table.table-nomina th { background: #1B2A4A !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .avoid-break { break-inside: avoid; }
+}
+
+/* =====================================================================
+   IMPRESION DEL MODULO DE REPORTES (/reportes/*)
+   El formato impreso NO es el mismo que el de pantalla: se optimiza
+   para papel — horizontal (las tablas de estos reportes tienen muchas
+   columnas), sin sombras/decoracion que no imprime bien, encabezado
+   de tabla repetido en cada pagina, y estados vacios muy compactos
+   (en un reporte real casi nunca deberian imprimirse vacios).
+   ===================================================================== */
+@media print {
+    main { padding: 0 !important; max-width: 100% !important; }
+
+    /* Tarjetas y membrete: se quita la sombra (no se ve bien en papel)
+       y se usa un borde fino en su lugar. */
+    .card, .reporte-letterhead, .stat-card, .stat-card-v2, .stat-card-icon {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+    .reporte-letterhead { padding: 1rem 1.25rem; }
+    .reporte-letterhead__app { font-size: 1.5rem; }
+    .reporte-letterhead__tagline { font-size: .85rem; }
+    .reporte-letterhead__divider { margin: .85rem 0 1rem; }
+    .reporte-letterhead__titulo h1 { font-size: 1.3rem; }
+
+    /* Colores que SI deben imprimirse (barras, insignias, pildoras):
+       por defecto los navegadores no imprimen fondos de color a menos
+       que se pida explicitamente. */
+    .reporte-letterhead__badge, .reporte-letterhead__subtitulo,
+    .stat-card-v2__bar, .stat-card-icon__badge,
+    .stat-card--total, table.table-nomina th,
+    .fila-total-destacada td, .fila-total-destacada .pildora-total {
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+
+    /* Estados vacios: en pantalla son una caja grande con icono y
+       texto de ayuda; en papel eso es un desperdicio de espacio, asi
+       que se reducen a una nota simple de una linea. */
+    .reporte-vacio, .reporte-vacio-v2 {
+        padding: .9rem 1.1rem; border: 1px dashed #cbd5e1 !important;
+        background: #fff !important; text-align: left;
+    }
+    .reporte-vacio__icon, .reporte-vacio-v2__icon { display: none; }
+    .reporte-vacio-v2__titulo { font-size: .95rem; }
+    .reporte-vacio-v2__texto { max-width: none; }
+
+    /* Tablas: encabezado repetido en cada pagina nueva, sin efecto
+       hover, letra un poco mas chica para que quepan mas columnas. */
+    table.table-nomina { font-size: 10.5px; }
+    table.table-nomina thead { display: table-header-group; }
+    table.table-nomina tbody tr:hover { background: transparent; }
+    table.table-nomina td, table.table-nomina th { padding: .4rem .5rem; }
+
+    /* Que ninguna tarjeta, fila o bloque quede cortado entre paginas */
+    .avoid-break, .stat-card, .stat-card-v2, .stat-card-icon,
+    .reporte-letterhead, tr { break-inside: avoid; page-break-inside: avoid; }
+
+    .reporte-footer { margin-top: 1rem; padding-top: .6rem; }
+}
